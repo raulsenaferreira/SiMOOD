@@ -1,2 +1,2 @@
-# PHD_with_Carla
-Building safety monitors for deep learning inside CARLA simulator
+# Repository of the paper
+Benchmarking safety monitors for deep learning inside CARLA simulator
