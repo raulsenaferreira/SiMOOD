@@ -291,10 +291,14 @@ def get_distance_by_camera(bbox):
 
 
 def draw_safety_margin(pygame, surface, color, lines, thickness):
-    pygame.draw.line(surface, color, lines[0], lines[1], thickness)
-    pygame.draw.line(surface, color, lines[1], lines[2], thickness)
-    pygame.draw.line(surface, color, lines[2], lines[3], thickness)
+    # pygame.draw.line(surface, color, lines[0], lines[1], thickness)
+    # pygame.draw.line(surface, color, lines[1], lines[2], thickness)
+    # pygame.draw.line(surface, color, lines[2], lines[3], thickness)
+
     #pygame.draw.line(bb_surface, color, lines[0], lines[3], thickness)
+    ## left, top, width, height
+    rect = pygame.draw.polygon(surface, color, lines, thickness)
+    return rect
 
 
 def bbox2yolobbox(xmin, ymin, xmax, ymax, width, height):
@@ -344,11 +348,21 @@ def intersec_bboxes(boxA, boxB):
     return interArea > 0
 
 
-def overlap2(bbox,safe_area):
+def overlap2(box,safe_area):
+    bbox = yolobbox2bbox(box[0],box[1],box[2],box[3])
     p1 = Polygon(safe_area)
     p2 = Polygon([(bbox[0],bbox[1]), (bbox[1],bbox[1]),(bbox[2],bbox[3]),(bbox[2],bbox[1])])
     #p1 = [(x1, y1), (x2, y1), (x2, y2), (x1, y2)]
     return(p1.intersects(p2))
+
+
+def overlap3(bbox,R2):
+    R1 = pygame.Rect(bbox)
+
+    if R1.colliderect(R2):
+        return True
+    else:
+        return False
 
 
 def draw_bboxes(world, 
@@ -402,8 +416,8 @@ def draw_bboxes(world,
         camera_manager.bb_font = pygame.font.SysFont('Monospace', 25)
         camera_manager.bb_font.set_bold(True)
 
-    draw_safety_margin(pygame, safety_surface, "green", util.WARNING_AREA, 5)
-    draw_safety_margin(pygame, safety_surface, "green", util.DANGER_AREA, 5)
+    WARNING_AREA = draw_safety_margin(pygame, safety_surface, "green", util.WARNING_AREA, 5)
+    DANGER_AREA = draw_safety_margin(pygame, safety_surface, "green", util.DANGER_AREA, 5)
 
     label_dawing_operations = []
     
@@ -445,8 +459,8 @@ def draw_bboxes(world,
         if not args.no_intervention:
 
             #Verify if an object enters in the warning/danger areas
-            if overlap2(bbox, util.WARNING_AREA):
-                if categories != 'person':
+            if overlap3(bbox, WARNING_AREA):
+                if label != 'person':
                     draw_safety_margin(pygame, safety_surface, "yellow", util.WARNING_AREA, 5)
                 else:
                     draw_safety_margin(pygame, safety_surface, "red", util.DANGER_AREA, 5)
@@ -454,7 +468,7 @@ def draw_bboxes(world,
                     ctrl.brake = 0.70
                     carla.Vehicle.apply_control(player, ctrl)
 
-            if overlap2(bbox, util.DANGER_AREA):
+            if overlap3(bbox, DANGER_AREA):
                 draw_safety_margin(pygame, safety_surface, "red", util.DANGER_AREA, 5)
 
             colhist = world.collision_sensor.get_collision_history()
