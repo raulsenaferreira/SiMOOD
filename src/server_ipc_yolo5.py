@@ -301,14 +301,6 @@ def draw_safety_margin(pygame, surface, color, lines, thickness):
     return rect
 
 
-def bbox2yolobbox(xmin, ymin, xmax, ymax, width, height):
-    x = xmin / width
-    y = ymin / height
-    w = (xmax - xmin) / width
-    h = (ymax - ymin) / height
-    return (x,y,w,h)
-
-
 def bbox_conversion(box, width, height):
     # normalizing data    
     box[0] *=width
@@ -322,41 +314,8 @@ def bbox_conversion(box, width, height):
 
     return [int(box[0]), int(box[1]), int(box[2]), int(box[3])]
 
-def yolobbox2bbox(x,y,w,h):
-    x1, y1 = x-w/2, y-h/2
-    x2, y2 = x+w/2, y+h/2
 
-    return (x1, y1, x2, y2)
-
-
-def yolovox_2_linestrings(bbox):
-    
-    return [LineString([(bbox[0], bbox[1]), (bbox[2], bbox[1])]), 
-    LineString([(bbox[2], bbox[1]), (bbox[2], bbox[3])]),
-    LineString([(bbox[2], bbox[3]), (bbox[0], bbox[3])]), 
-    LineString([(bbox[0], bbox[3]), (bbox[0], bbox[1])])]
-
-
-def intersec_bboxes(boxA, boxB):
-    xA = max(boxA[0], boxB[0])
-    yA = max(boxA[1], boxB[1])
-    xB = min(boxA[2], boxB[2])
-    yB = min(boxA[3], boxB[3])
-    # compute the area of intersection rectangle
-    interArea = max(0, xB - xA + 1) * max(0, yB - yA + 1)
-
-    return interArea > 0
-
-
-def overlap2(box,safe_area):
-    bbox = yolobbox2bbox(box[0],box[1],box[2],box[3])
-    p1 = Polygon(safe_area)
-    p2 = Polygon([(bbox[0],bbox[1]), (bbox[1],bbox[1]),(bbox[2],bbox[3]),(bbox[2],bbox[1])])
-    #p1 = [(x1, y1), (x2, y1), (x2, y2), (x1, y2)]
-    return(p1.intersects(p2))
-
-
-def overlap3(bbox,R2):
+def is_rect_overlap(bbox,R2):
     R1 = pygame.Rect(bbox)
 
     if R1.colliderect(R2):
@@ -459,7 +418,7 @@ def draw_bboxes(world,
         if not args.no_intervention:
 
             #Verify if an object enters in the warning/danger areas
-            if overlap3(bbox, WARNING_AREA):
+            if is_rect_overlap(bbox, WARNING_AREA):
                 if label != 'person':
                     draw_safety_margin(pygame, safety_surface, "yellow", util.WARNING_AREA, 5)
                 else:
@@ -468,7 +427,7 @@ def draw_bboxes(world,
                     ctrl.brake = 0.70
                     carla.Vehicle.apply_control(player, ctrl)
 
-            if overlap3(bbox, DANGER_AREA):
+            if is_rect_overlap(bbox, DANGER_AREA):
                 draw_safety_margin(pygame, safety_surface, "red", util.DANGER_AREA, 5)
 
             colhist = world.collision_sensor.get_collision_history()
@@ -554,7 +513,7 @@ def game_loop(args):
 
         # IKS: Switch to synchronous mode to ensure synchrony between the world and the sensors
         settings = world.world.get_settings()
-        settings.synchronous_mode = True
+        settings.synchronous_mode = False # True
         settings.fixed_delta_seconds = 0.05  # 1 / fps
         world.world.apply_settings(settings)
 
@@ -635,9 +594,9 @@ def game_loop(args):
 
                         #################################
                         # verify fog conditions
-                        react = SM.foggy(modified_image)
-                        if react:
-                            modified_image = SM.image_dehazing(modified_image)
+                        #react = SM.foggy(modified_image)
+                        #if react:
+                        #    modified_image = SM.image_dehazing(modified_image)
                         #################################
 
                         #detections = detect_objects(modified_image, 'localhost', 6000)
@@ -655,8 +614,8 @@ def game_loop(args):
                             real_time_view = pygame.surfarray.make_surface(modified_image.swapaxes(0, 1))
 
                         except Exception as e:
-                            print(str(e))
-                            #real_time_view = pygame.surfarray.make_surface(world.camera_manager.np_image.swapaxes(0, 1))
+                            print('Exception:', str(e))
+                            real_time_view = pygame.surfarray.make_surface(world.camera_manager.np_image.swapaxes(0, 1))
 
                     else:
                         original_image = world.camera_manager.np_image
@@ -979,7 +938,7 @@ def main():
     argparser.add_argument('--severity',
                            type=str,
                            default='none',
-                           choices=['none', '1', '2', '3'],
+                           choices=['1', '2', '3', '4', '5'],
                            help='Severity for a fault type')
 
     ###########################################################################################

@@ -511,38 +511,72 @@ def shifted_pixel(image, severity=1):
 
 
 def test_albu(img, aug_type, severity):
+    #print('severity', severity, type(severity))
     transform = None
 
     if aug_type == 'sun_flare':
-        transform = AUG.RandomSunFlare(flare_roi=(0, 0, 0.1, 0.1), 
+        flare_roi = [(0.25, 0.25, 0.5, 0.5), (0.25, 0.25, 0.75, 0.75), (0.5, 0.5, 0.75, 0.75), (0.5, 0.5, 1, 1), (0.75, 0.75, 1, 1)]
+        src_radius = [400, 450, 500, 550, 600]
+        try:
+            transform = AUG.RandomSunFlare(flare_roi=flare_roi[severity-1], 
+                              angle_lower=0, angle_upper=1, 
+                              num_flare_circles_lower=6, 
+                              num_flare_circles_upper=10, 
+                              src_radius=src_radius[severity-1], src_color=(255, 255, 255),
+                              always_apply=True)
+        except:
+            transform = AUG.RandomSunFlare(flare_roi=(0, 0, 0.1, 0.1), 
                               angle_lower=0, angle_upper=1, 
                               num_flare_circles_lower=6, 
                               num_flare_circles_upper=10, 
                               src_radius=400, src_color=(255, 255, 255),
                               always_apply=True)
+
     elif aug_type == 'snow':
-        transform = AUG.RandomSnow(snow_point_lower=0, 
+        brightness_coeff = [2,3,4,5,7]
+        try:
+            transform = AUG.RandomSnow(snow_point_lower=0, 
                           snow_point_upper=0.5, 
-                          brightness_coeff=5, always_apply=True)
+                          brightness_coeff=brightness_coeff[severity-1], always_apply=True)
+        except:
+            transform = AUG.RandomSnow(snow_point_lower=0, 
+                          snow_point_upper=0.5, 
+                          brightness_coeff=1, always_apply=True)
 
     elif aug_type == 'fog':
-        if severity == 3:
-            transform = AUG.RandomFog(fog_coef_lower=0.3, fog_coef_upper=1, alpha_coef=0.3, always_apply=True) #severity = 3
-        else:
-            transform = AUG.RandomFog(fog_coef_lower=0.2, fog_coef_upper=0.2, alpha_coef=0.05, always_apply=True) #severity = 1
+        alpha_coef = [0.01, 0.05, 0.1, 0.2, 0.3]
+        try:
+            transform = AUG.RandomFog(fog_coef_lower=0.3, fog_coef_upper=1, alpha_coef=alpha_coef[severity-1], always_apply=True)
+        except:
+            transform = AUG.RandomFog(fog_coef_lower=0, fog_coef_upper=0, alpha_coef=0.0, always_apply=True)
 
     elif aug_type == 'rain':
-        rain_types = [None, 'drizzle', 'heavy', 'torrential']
-        transform = AUG.RandomRain(slant_lower=-10, slant_upper=10, 
-                          drop_length=20, drop_width=1, drop_color=(200, 200, 200), 
-                          blur_value=7, brightness_coefficient=0.7, 
-                          rain_type=rain_types[severity], always_apply=True)
+        rain_types = ['drizzle', 'heavy', 'torrential', 'heavy', 'torrential']
+        try:
+            transform = AUG.RandomRain(slant_lower=-10, slant_upper=10, 
+                              drop_length=20, drop_width=1, drop_color=(200, 200, 200), 
+                              blur_value=7, brightness_coefficient=0.7, 
+                              rain_type=rain_types[severity-1], always_apply=True)
+        except:
+            transform = AUG.RandomRain(slant_lower=-10, slant_upper=10, 
+                              drop_length=20, drop_width=1, drop_color=(200, 200, 200), 
+                              blur_value=7, brightness_coefficient=0.7, 
+                              rain_type=None, always_apply=True)
 
     elif aug_type == 'brightness':
-        transform = AUG.RandomBrightnessContrast(brightness_limit=(0.4, 0.4), contrast_limit=(0.0,0.0), always_apply=True)
+        brightness_limit = [(0.2, 0.2), (0.4, 0.4), (0.6, 0.6), (0.8, 0.8), (1, 1)]
+        #print('brightness_limit', brightness_limit[severity-1])
+        try:
+            transform = AUG.RandomBrightnessContrast(brightness_limit=brightness_limit[severity-1], contrast_limit=(0.0,0.0), always_apply=True)
+        except:
+            transform = AUG.RandomBrightnessContrast(brightness_limit=(0, 0), contrast_limit=(0.0,0.0), always_apply=True)
 
     elif aug_type == 'contrast':
-        transform = AUG.RandomBrightnessContrast(brightness_limit=(0.0,0.0), contrast_limit=(0.4, 0.4), always_apply=True)
+        contrast_limit = [(0.2, 0.2), (0.4, 0.4), (0.6, 0.6), (0.8, 0.8), (1, 1)]
+        try:
+            transform = AUG.RandomBrightnessContrast(brightness_limit=(0.0,0.0), contrast_limit=contrast_limit[severity-1], always_apply=True)
+        except:
+            transform = AUG.RandomBrightnessContrast(brightness_limit=(0.0,0.0), contrast_limit=(0, 0), always_apply=True)
 
     elif aug_type == 'shadow':
         transform = AUG.RandomShadow(shadow_roi=(0, 0.5, 1, 1), 
@@ -552,15 +586,22 @@ def test_albu(img, aug_type, severity):
     elif aug_type == 'channel_dropout':
         transform = AUG.ChannelDropout(channel_drop_range=(1,1), always_apply=True)
 
-
     elif aug_type == 'channel_shuffle':
         transform = AUG.ChannelShuffle(p=1)
 
     elif aug_type == 'gaussian_blur':
-        transform = AUG.GaussianBlur(blur_limit=(3, 7), always_apply=True)
+        blur_limit = [(3, 7), (3, 7), (3, 7), (3, 7), (3, 7)]
+        try:
+            transform = AUG.GaussianBlur(blur_limit=blur_limit, always_apply=True)
+        except:
+            transform = AUG.GaussianBlur(blur_limit=(3, 7), always_apply=True)
 
     elif aug_type == 'gaussian_noise':
-        transform = AUG.GaussNoise(var_limit=(0.1, 0.1), mean=0, always_apply=True)
+        var_limit = [(0.2, 0.2), (0.4, 0.4), (0.6, 0.6), (0.8, 0.8), (1, 1)]
+        try:
+            transform = AUG.GaussNoise(var_limit=var_limit[severity-1], mean=0, always_apply=True)
+        except:
+            transform = AUG.GaussNoise(var_limit=(0, 0), mean=0, always_apply=True)
 
     elif aug_type == 'coarse_dropout':
         transform = AUG.CoarseDropout(max_holes=8, max_height=10, max_width=10, 
