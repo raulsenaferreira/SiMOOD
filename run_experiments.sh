@@ -6,15 +6,16 @@ LOG_PATH=${HOME}'src/log/'
 SCENARIO_EXECUTOR_PATH='src/server_ipc_yolo5.py'
 OUTPUT_DIR='src/scenario_test'
 SCENARIO_PATH='src/pedestrian_crossing_between_cars0/scenario.xosc'
+#SCENARIO_PATH='src/pedestrian_crossing_between_cars0/pedestrian_collision.xosc'
 
 
 # PARAMS
 day_times=('day')
-#  'sunset' 'night'
-threats=('brightness')
-# 'contrast' 'fog' 'snow' 'rain' 'sun_flare' 'gaussian_noise'
-severity_types=('1' '2' '3')
-# '3' '4' '5'
+# 'sunset' 'night'
+threats=('smoke')
+#'smoke' 'brightness' 'contrast' 'snow' 'sun_flare' 'gaussian_noise' 'rain' 'gaussian_blur' 'grid_dropout' 'coarse_dropout' 'channel_dropout' 'channel_shuffle' 'spatter' 'shot_noise' 'speckle_noise' 'pixelate' 'impulse_noise' 'shifted_pixel' 'row_add_logic' 
+severity_types=('3')
+#'1' '2' '3' '4' '5'
 
 
 # iterates through all fault types and their intensity during day or night

@@ -147,7 +147,8 @@ def shot_noise(x, severity=1):
 
 
 def impulse_noise(x, severity=1):
-    c = [.01, .02, .03, .05, .07][severity - 1]
+    noise_config = [.1, .15, .2, .25, .3]*severity
+    c = noise_config[severity - 1]
 
     #x = sk.util.random_noise(np.array(x) / 255., mode='s&p', amount=c)
     x = sk.util.random_noise(x, mode='s&p', amount=c)
@@ -324,11 +325,13 @@ def snow(x, severity=1):
 
 
 def spatter(x, severity=1):
-    c = [(0.62,0.1,0.7,0.7,0.5,0),
+    noise_config = [(0.62,0.1,0.7,0.7,0.5,0),
          (0.65,0.1,0.8,0.7,0.5,0),
          (0.65,0.3,1,0.69,0.5,0),
          (0.65,0.1,0.7,0.69,0.6,1),
-         (0.65,0.1,0.5,0.68,0.6,1)][severity - 1]
+         (0.65,0.1,0.5,0.68,0.6,1)]*severity
+
+    c = noise_config[severity - 1]
     x = np.array(x, dtype=np.float32) #/ 255.
 
     liquid_layer = np.random.normal(size=x.shape[:2], loc=c[0], scale=c[1])
@@ -490,16 +493,16 @@ def pixel_trap(image, severity=1):
 
 
 def row_add_logic(image, severity=1):
-    levels = [int(image.shape[2] / 0.05), int(image.shape[2] / 0.03), int(image.shape[2] / 0.01)]
+    levels = [int(image.shape[2] / 0.05), int(image.shape[2] / 0.04), int(image.shape[2] / 0.03), int(image.shape[2] / 0.02), int(image.shape[2] / 0.01)]
     
-    ind = int(image.shape[0]/2)-2
+    ind = int(image.shape[0]/2)
     for i in range(1, levels[severity-1]+1):
         image[ind+i] = image[ind]
                 
     return image * 255
         
 def shifted_pixel(image, severity=1):
-    levels = [int(image.shape[2] / 0.05), int(image.shape[2] / 0.03), int(image.shape[2] / 0.01)]
+    levels = [int(image.shape[2] / 0.5) , int(image.shape[2] / 0.25), int(image.shape[2] / 0.1), int(image.shape[2] / 0.075), int(image.shape[2] / 0.05)]
 
     max_shift = levels[severity-1]
     m,n = image.shape[0], image.shape[1]
@@ -510,7 +513,7 @@ def shifted_pixel(image, severity=1):
     return image * 255
 
 
-def test_albu(img, aug_type, severity):
+def apply_threats(img, aug_type, severity):
     #print('severity', severity, type(severity))
     transform = None
 
@@ -543,8 +546,9 @@ def test_albu(img, aug_type, severity):
                           snow_point_upper=0.5, 
                           brightness_coeff=1, always_apply=True)
 
-    elif aug_type == 'fog':
+    elif aug_type == 'smoke':
         alpha_coef = [0.01, 0.05, 0.1, 0.2, 0.3]
+
         try:
             transform = AUG.RandomFog(fog_coef_lower=0.3, fog_coef_upper=1, alpha_coef=alpha_coef[severity-1], always_apply=True)
         except:
@@ -578,23 +582,24 @@ def test_albu(img, aug_type, severity):
         except:
             transform = AUG.RandomBrightnessContrast(brightness_limit=(0.0,0.0), contrast_limit=(0, 0), always_apply=True)
 
-    elif aug_type == 'shadow':
-        transform = AUG.RandomShadow(shadow_roi=(0, 0.5, 1, 1), 
-                            num_shadows_lower=1, num_shadows_upper=1, 
-                            shadow_dimension=2, always_apply=True)
-
     elif aug_type == 'channel_dropout':
-        transform = AUG.ChannelDropout(channel_drop_range=(1,1), always_apply=True)
+        channel_drop_range = [(1,1), (1,1), (2,2), (2,2), (2,2)]
+        fill_value = [0, 255, 0, 255, 122]
+
+        try:
+            transform = AUG.ChannelDropout(channel_drop_range=channel_drop_range[severity-1], fill_value=fill_value[severity-1], always_apply=True)
+        except:
+            transform = AUG.ChannelDropout(always_apply=True)
 
     elif aug_type == 'channel_shuffle':
         transform = AUG.ChannelShuffle(p=1)
 
     elif aug_type == 'gaussian_blur':
-        blur_limit = [(3, 7), (3, 7), (3, 7), (3, 7), (3, 7)]
+        blur_limit = [(3, 7), (8, 13), (14, 20), (21, 28), (29, 37)]
         try:
-            transform = AUG.GaussianBlur(blur_limit=blur_limit, always_apply=True)
+            transform = AUG.GaussianBlur(blur_limit=blur_limit[severity-1], always_apply=True)
         except:
-            transform = AUG.GaussianBlur(blur_limit=(3, 7), always_apply=True)
+            transform = AUG.GaussianBlur(blur_limit=(0, 0), always_apply=True)
 
     elif aug_type == 'gaussian_noise':
         var_limit = [(0.2, 0.2), (0.4, 0.4), (0.6, 0.6), (0.8, 0.8), (1, 1)]
@@ -604,55 +609,93 @@ def test_albu(img, aug_type, severity):
             transform = AUG.GaussNoise(var_limit=(0, 0), mean=0, always_apply=True)
 
     elif aug_type == 'coarse_dropout':
-        transform = AUG.CoarseDropout(max_holes=8, max_height=10, max_width=10, 
-                             min_holes=None, min_height=10, min_width=10,
+        holes = [10, 20, 30, 40, 50]
+        height = [10, 15, 20, 25, 30]
+        width = [10, 15, 20, 25, 30]
+        try:
+            transform = AUG.CoarseDropout(max_holes=holes[severity-1], max_height=height[severity-1], max_width=width[severity-1], 
+                             min_holes=holes[severity-1], min_height=height[severity-1], min_width=width[severity-1],
                              always_apply=True)
+        except:
+            transform = AUG.CoarseDropout(always_apply=True) # default values
 
     elif aug_type == 'grid_dropout':
-        transform = AUG.GridDropout(ratio=0.5, 
-                           unit_size_min=50, 
-                           unit_size_max=100, 
-                           holes_number_x=5, 
-                           holes_number_y=5, 
-                           always_apply=True)
+        u_min = [10, 25, 50, 66, 75]
+        u_max = [10, 25, 50, 66, 75]
+        h_x = [1, 3, 5, 7, 10]
+        h_y = [1, 3, 5, 7, 10]
+        try:
+            transform = AUG.GridDropout(
+                           unit_size_min=u_min[severity-1], 
+                           unit_size_max=u_max[severity-1], 
+                           holes_number_x=h_x[severity-1], 
+                           holes_number_y=h_y[severity-1], 
+                           always_apply=True
+                           )
+        except:
+            transform = AUG.GridDropout(
+                           unit_size_min=1, 
+                           unit_size_max=1, 
+                           holes_number_x=1, 
+                           holes_number_y=1, 
+                           always_apply=True
+                           )
 
+
+    # Not used in this moment
+    elif aug_type == 'shadow':
+        transform = AUG.RandomShadow(shadow_roi=(0, 0.5, 1, 1), 
+                            num_shadows_lower=1, num_shadows_upper=1, 
+                            shadow_dimension=2, always_apply=True)
+
+    # Not used in this moment
     elif aug_type == 'speed':
         image=am.add_speed(img)
         return image * 255
 
+    # Not used in this moment
     elif aug_type == 'saturate':
         image=saturate(img)
         return image
 
-    elif aug_type == 'spatter':
-        image=spatter(img)
+    # Not used in this moment
+    elif aug_type == 'defocus_blur':
+        image=defocus_blur(img, severity)
         return image
 
+
     elif aug_type == 'shot_noise':
-        image=shot_noise(img)
+        image=shot_noise(img, severity)
         return image
 
     elif aug_type == 'speckle_noise':
-        image=speckle_noise(img)
+        image=speckle_noise(img, severity)
         return image
 
-    elif aug_type == 'defocus_blur':
-        image=defocus_blur(img)
+    elif aug_type == 'spatter':
+        image=spatter(img, severity)
         return image
-
+    
     elif aug_type == 'pixelate':
-        image=pixelate(img)
+        image=pixelate(img, severity)
         return image
 
     elif aug_type == 'elastic_transform':
-        image=elastic_transform(img)
+        image=elastic_transform(img, severity)
         return image
 
     elif aug_type == 'impulse_noise':
-        image=impulse_noise(img)
+        image=impulse_noise(img, severity)
         return image
 
-    
+    elif aug_type == 'shifted_pixel':
+        image=shifted_pixel(img, severity)
+        return image
+
+    elif aug_type == 'row_add_logic':
+        image=row_add_logic(img, severity)
+        return image
+
 
     image = transform(image=img)['image']
     return image * 255

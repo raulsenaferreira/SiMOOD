@@ -423,8 +423,9 @@ def draw_bboxes(world,
                     draw_safety_margin(pygame, safety_surface, "yellow", util.WARNING_AREA, 5)
                 else:
                     draw_safety_margin(pygame, safety_surface, "red", util.DANGER_AREA, 5)
-                    #ctrl.steer = -0.25
-                    ctrl.brake = 0.70
+                    #ctrl.steer = -0.7
+                    #ctrl.brake = 0.99
+                    ctrl.hand_brake=True
                     carla.Vehicle.apply_control(player, ctrl)
 
             if is_rect_overlap(bbox, DANGER_AREA):
@@ -432,9 +433,11 @@ def draw_bboxes(world,
 
             colhist = world.collision_sensor.get_collision_history()
             if len(colhist) > 0:
-                print('Collision at frame: ', colhist)
-                ctrl.brake = 0.99
-                carla.Vehicle.apply_control(player, ctrl)
+                # print('Collision at frame: ', colhist)
+                # #ctrl.brake = 0.99
+                # ctrl.hand_brake=True
+                # carla.Vehicle.apply_control(player, ctrl)
+
                 # save info about the frame and the params that led to the hazard
                 with open("src/hazards/{0}.csv".format(str(args.fault_type)), "a") as myfile:
                     myfile.write(('SEVERITY: {}; DAY_TIME: {}; DETAILS: {} \n').format(str(args.severity), str(args.time_of_day), str(colhist)))
@@ -513,7 +516,7 @@ def game_loop(args):
 
         # IKS: Switch to synchronous mode to ensure synchrony between the world and the sensors
         settings = world.world.get_settings()
-        settings.synchronous_mode = False # True
+        settings.synchronous_mode = True 
         settings.fixed_delta_seconds = 0.05  # 1 / fps
         world.world.apply_settings(settings)
 
@@ -585,25 +588,27 @@ def game_loop(args):
                 if world.camera_manager.surface is not None:
                     
                     if args.fault_type != 'none':
-                        ### Modifying the scenario on the fly with some corruptions
-                        original_image = world.camera_manager.np_image / 255
-                        original_image = np.array(original_image, dtype=np.float32)
-                        modified_image = corruptions.test_albu(original_image, args.fault_type, int(args.severity))
-                        modified_image = np.array(modified_image, dtype=np.float32)
-                        image_queue.append(modified_image)
-
-                        #################################
-                        # verify fog conditions
-                        #react = SM.foggy(modified_image)
-                        #if react:
-                        #    modified_image = SM.image_dehazing(modified_image)
-                        #################################
-
-                        #detections = detect_objects(modified_image, 'localhost', 6000)
-                        #resizing for model input compatibility
-                        #print('modified_image', modified_image)
-                        modified_image = np.asarray(modified_image)
+                        
                         try:
+                            ### Modifying the scenario on the fly with some corruptions
+                            original_image = world.camera_manager.np_image / 255
+                            original_image = np.array(original_image, dtype=np.float32)
+                            modified_image = corruptions.apply_threats(original_image, args.fault_type, int(args.severity))
+                            modified_image = np.array(modified_image, dtype=np.float32)
+                            image_queue.append(modified_image)
+
+                            #################################
+                            # verify fog conditions
+                            #react = SM.foggy(modified_image)
+                            #if react:
+                            #    modified_image = SM.image_dehazing(modified_image)
+                            #################################
+
+                            #detections = detect_objects(modified_image, 'localhost', 6000)
+                            #resizing for model input compatibility
+                            #print('modified_image', modified_image)
+                            #modified_image = np.asarray(modified_image)
+
                             # sized = cv.resize(modified_image, (640, 640))
                             # sized = cv.cvtColor(sized, cv.COLOR_BGR2RGB)
                             # # perform inference
@@ -614,7 +619,10 @@ def game_loop(args):
                             real_time_view = pygame.surfarray.make_surface(modified_image.swapaxes(0, 1))
 
                         except Exception as e:
-                            print('Exception:', str(e))
+                            #print('Exception:', str(e))
+                            with open("src/log/perception.csv", "a") as myfile:
+                                myfile.write('Exception during object image transformation for {}: {} \n'.format(str(args.fault_type), str(e)))
+
                             real_time_view = pygame.surfarray.make_surface(world.camera_manager.np_image.swapaxes(0, 1))
 
                     else:
@@ -930,7 +938,7 @@ def main():
     argparser.add_argument('--fault_type',
                            type=str,
                            default='none',
-                           choices=['brightness', 'contrast', 'saturate', 'sun_flare', 'rain', 'snow', 'fog', 'pixel_trap', 'row_add_logic', 'shifted_pixel', 'channel_shuffle', 
+                           choices=['brightness', 'contrast', 'saturate', 'sun_flare', 'rain', 'snow', 'smoke', 'pixel_trap', 'row_add_logic', 'shifted_pixel', 'channel_shuffle', 
                            'channel_dropout', 'coarse_dropout', 'grid_dropout', 'spatter', 'gaussian_noise', 'shot_noise', 'speckle_noise', 'defocus_blur', 'elastic_transform', 
                            'impulse_noise', 'gaussian_blur', 'pixelate'],
                            help='23 transformations from three types of OOD categories: Anomalies, distributional shift, and noise.')
@@ -945,9 +953,9 @@ def main():
     ### fault_type
     #Distributional shift: 
     #   In sensor's quality: 'brightness', 'contrast', 'saturate', 'speed' (not necessary fot the moment)
-    #   In the environment: 'sun_flare', 'rain', 'snow', 'fog', 'shadow' (not necessary fot the moment)
+    #   In the environment: 'sun_flare', 'rain', 'snow', 'smoke', 'shadow' (not necessary fot the moment)
 
-    #Anomaly: 'pixel_trap', 'row_add_logic', 'shifted_pixel' (need of some adjustments),
+    #Anomaly: 'row_add_logic', 'shifted_pixel', 'pixel_trap' (not necessary fot the moment)
     # 'channel_shuffle', 'channel_dropout', 'coarse_dropout', 'grid_dropout'
 
     #Noise: 'spatter', 'gaussian_noise', 'shot_noise', 'speckle_noise', 'defocus_blur',

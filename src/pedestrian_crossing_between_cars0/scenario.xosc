@@ -31,7 +31,8 @@
 
 
 <ScenarioObject name="adversary">
-  <Pedestrian model="walker.pedestrian.0022" mass="90.0" name="walker.pedestrian.0022" pedestrianCategory="pedestrian">
+  <!-- <Pedestrian model="walker.pedestrian.0022" mass="90.0" name="walker.pedestrian.0022" pedestrianCategory="pedestrian"> -->
+  <Pedestrian model="walker.pedestrian.0034" mass="90.0" name="walker.pedestrian.0034" pedestrianCategory="pedestrian">
     <ParameterDeclarations/>
     <BoundingBox>
       <Center x="1.5" y="0.0" z="0.9"/>
@@ -486,7 +487,8 @@
                   <SpeedAction>
                       <SpeedActionDynamics dynamicsShape="step" value="1" dynamicsDimension="distance" />
                       <SpeedActionTarget>
-                          <AbsoluteTargetSpeed value="9.166666666666666" />
+                          <!-- <AbsoluteTargetSpeed value="9.166666666666666" /> -->
+                          <AbsoluteTargetSpeed value="8.0" /> <!-- CAR SPEED -->
                       </SpeedActionTarget>
                   </SpeedAction>
               </LongitudinalAction>
@@ -557,7 +559,7 @@
                   <SpeedAction>
                       <SpeedActionDynamics dynamicsShape="step" value="1" dynamicsDimension="distance" />
                       <SpeedActionTarget>
-                          <AbsoluteTargetSpeed value="2.2222222222222223" />
+                          <AbsoluteTargetSpeed value="2.0" /> <!-- PEDESTRIAN SPEED -->
                       </SpeedActionTarget>
                   </SpeedAction>
               </LongitudinalAction>
