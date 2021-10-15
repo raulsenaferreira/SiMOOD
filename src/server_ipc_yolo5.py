@@ -76,8 +76,6 @@ from original_manual_control import (World, HUD, KeyboardControl, CameraManager,
                                      CollisionSensor, LaneInvasionSensor, GnssSensor, IMUSensor)
 from bounding_box_extractor import get_2d_bounding_box, get_class_from_actor_type
 
-import os
-import sys
 import logging
 import time
 import pygame
@@ -92,17 +90,15 @@ from multiprocessing.connection import Client
 import datetime
 import shutil
 
-import util
-from shapely.geometry import LineString
-from shapely.geometry import Polygon
-
 import corruptions
-import matplotlib.pyplot as plt
 from PIL import Image
 import cv2 as cv
 
 import safety_monitors as SM
 from yolov5 import YOLOv5
+import draw_utils
+import torch
+from facebook import DETR as detr
 
 # ==============================================================================
 # -- Global functions ----------------------------------------------------------
@@ -271,192 +267,7 @@ def calculate_camera_calibration(image_width, image_height, fov):
     return calibration
 
 
-def detect_objects(image: np.ndarray, hostname: str, port: int) -> List[Dict[str, Union[List[int], str, float]]]:
-    conn = Client((hostname, port), authkey=b'password')
-    conn.send(image)
-    result = conn.recv()
-    conn.close()
-
-    return result
-
-
-def get_distance_by_camera(bbox):
-    ## Distance Measurement for each bounding box
-    x, y, w, h = bbox[0], bbox[1], bbox[2], bbox[3]
-    ## item() is used to retrieve the value from the tensor
-    distance = (2 * 3.14 * 180) / (w.item()+ h.item() * 360) * 1000 + 3 ### Distance measuring in Inch 
-    #feedback = ("{}".format(detection['label'])+ " " +"is"+" at {} ".format(round(distance/39.37, 2))+"Meters")
-
-    return "{} meters".format(round(distance, 3)) # meters   /39.37
-
-
-def draw_safety_margin(pygame, surface, color, lines, thickness):
-    # pygame.draw.line(surface, color, lines[0], lines[1], thickness)
-    # pygame.draw.line(surface, color, lines[1], lines[2], thickness)
-    # pygame.draw.line(surface, color, lines[2], lines[3], thickness)
-
-    #pygame.draw.line(bb_surface, color, lines[0], lines[3], thickness)
-    ## left, top, width, height
-    rect = pygame.draw.polygon(surface, color, lines, thickness)
-    return rect
-
-
-def bbox_conversion(box, width, height):
-    # normalizing data    
-    box[0] *=width
-    box[1] *= height
-    box[2] *= width
-    box[3] *= height
-
-    # correcting bounding box offset related to the center of the image
-    box[0] = box[0] - box[2]/2
-    box[1] = box[1] - box[3]/2
-
-    return [int(box[0]), int(box[1]), int(box[2]), int(box[3])]
-
-
-def is_rect_overlap(bbox,R2):
-    R1 = pygame.Rect(bbox)
-
-    if R1.colliderect(R2):
-        return True
-    else:
-        return False
-
-
-def draw_bboxes(world, 
-                carla,
-                camera_manager,
-                display,
-                view_width,
-                view_height,
-                results,
-                args,
-                show_distance= False):
-
-    # parse results
-    #predictions = results.pred[0]
-    predictions = results.xywhn[0]
-    #print('predictions', predictions)
-    bboxes = predictions[:, :4] # x1, x2, y1, y2
-    #print('boxes', boxes)
-    scores = predictions[:, 4]
-    #print('scores', scores)
-    categories = predictions[:, 5]
-    #print('categories', categories)
-
-    player = None
-    for actor in world.world.get_actors():
-        if actor.attributes.get('role_name') == 'hero':
-            player = actor
-            break
-    ctrl = carla.VehicleControl()
-
-    # Create surface for the bounding boxes
-    bb_surface = pygame.Surface((view_width, view_height))
-    bb_surface.set_colorkey((0, 0, 0))
-
-    # Create a surface for the confidences
-    conf_surface = pygame.Surface((view_width, view_height))
-    conf_surface.set_colorkey((0, 0, 0))
-    conf_surface.set_alpha(80)
-
-    # Create a surface for the labels
-    label_surface = pygame.Surface((view_width, view_height))
-    label_surface.fill((128, 128, 128))
-    label_surface.set_colorkey((128, 128, 128))
-
-    # Create a surface for the safety margins
-    safety_surface = pygame.Surface((view_width, view_height))
-    safety_surface.set_colorkey((0, 0, 0))
-
-    # Initialize font if not done already
-    if not hasattr(camera_manager, 'bb_font'):
-        camera_manager.bb_font = pygame.font.SysFont('Monospace', 25)
-        camera_manager.bb_font.set_bold(True)
-
-    WARNING_AREA = draw_safety_margin(pygame, safety_surface, "green", util.WARNING_AREA, 5)
-    DANGER_AREA = draw_safety_margin(pygame, safety_surface, "green", util.DANGER_AREA, 5)
-
-    label_dawing_operations = []
-    
-    for tensor_bbox, score, category in zip(bboxes, scores, categories):
-        is_entered_warning_area = False
-        is_entered_danger_area = False
-
-        #print('detection {} \n tensor_bbox {} \n score {} \n category {} \n'.format(detection, tensor_bbox, score, category))
-
-        label = results.names[int(category.item())]
-        #print('label', label)
-        
-        bbox = tensor_bbox.cpu().numpy()
-        np.random.seed(hash(label) % (2 ** 32 - 1))
-        color = np.random.uniform(low=0, high=255, size=(3))
-
-        # converting bbox to acceptable format for pygame rect
-        bbox = bbox_conversion(bbox, view_width, view_height)
-        # Draw the bounding box
-        pygame.draw.rect(bb_surface, color, pygame.Rect(bbox), 3)
-
-        # Draw the label
-        pygame.draw.rect(bb_surface, color, pygame.Rect(bbox[0], bbox[1] - 30, 25 * len(label), 30))
-
-        # label_dawing_operations.append(
-        #    lambda: self.display.blit(self.bb_font.render(detection['label'], True, (0, 0, 0)), (bbox[0] + 5, bbox[1] - 30)))
-        label_surface.blit(camera_manager.bb_font.render(label, True, (0, 0, 0)), (bbox[0] + 5, bbox[1] - 30))
-
-        #label_surface.blit(camera_manager.bb_font.render(str(round(detection['score'], 3)), True, (0, 0, 0)),
-        #                   (bbox[2] + 5, bbox[3] - 30))
-
-        if show_distance:
-            #Draw the distance
-            label_surface.blit(camera_manager.bb_font.render(get_distance_by_camera(bbox), True, (0, 0, 0)), (int(bbox[2]) + 15, int(bbox[3]) - 30))
-
-        # Draw the confidence
-        # pygame.draw.rect(conf_surface, color, pygame.Rect(int(bbox[0]), int(bbox[3]), int(bbox[2]) - int(bbox[0]), (int(bbox[1]) - int(bbox[3])) * score.item()))
-
-        if not args.no_intervention:
-
-            #Verify if an object enters in the warning/danger areas
-            if is_rect_overlap(bbox, WARNING_AREA):
-                if label != 'person':
-                    draw_safety_margin(pygame, safety_surface, "yellow", util.WARNING_AREA, 5)
-                else:
-                    draw_safety_margin(pygame, safety_surface, "red", util.DANGER_AREA, 5)
-                    #ctrl.steer = -0.7
-                    #ctrl.brake = 0.99
-                    ctrl.hand_brake=True
-                    carla.Vehicle.apply_control(player, ctrl)
-
-            if is_rect_overlap(bbox, DANGER_AREA):
-                draw_safety_margin(pygame, safety_surface, "red", util.DANGER_AREA, 5)
-
-            colhist = world.collision_sensor.get_collision_history()
-            if len(colhist) > 0:
-                # print('Collision at frame: ', colhist)
-                # #ctrl.brake = 0.99
-                # ctrl.hand_brake=True
-                # carla.Vehicle.apply_control(player, ctrl)
-
-                # save info about the frame and the params that led to the hazard
-                with open("src/hazards/{0}.csv".format(str(args.fault_type)), "a") as myfile:
-                    myfile.write(('SEVERITY: {}; DAY_TIME: {}; DETAILS: {} \n').format(str(args.severity), str(args.time_of_day), str(colhist)))
-
-                #terminates the program if there is a hazard
-                quit()
-
-            #collision = [colhist[x + world.frame - 200] for x in range(0, 200)]
-            #max_col = max(1.0, max(collision))
-            #collision = [x / max_col for x in collision]
-            #print('#### {}'.format(collision))
-
-    display.blit(bb_surface, (0, 0))
-    display.blit(conf_surface, (0, 0))
-    display.blit(label_surface, (0, 0))
-    display.blit(safety_surface, (0, 0))
-
-    for ldo in label_dawing_operations:
-        ldo()
+##draw_utils
 
 
 def game_loop(args):
@@ -568,11 +379,23 @@ def game_loop(args):
         # SM should react or not ?
         react = False
 
-        # set model params
-        model_path = "yolov5/weights/yolov5s.pt" # it automatically downloads yolov5s model to given path
-        device = "cuda" # or "cpu"
-        # init yolov5 model
-        yolov5 = YOLOv5(model_path, device)
+        object_detector = None
+
+        if args.object_detector_type == 'yolo':
+            # set model params
+            model_path = "yolov5/weights/yolov5s.pt" # it automatically downloads yolov5s model to given path
+            device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            # init yolov5 model
+            object_detector = YOLOv5(model_path, device)
+        elif args.object_detector_type == 'detr':
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+            object_detector = torch.hub.load('facebookresearch/detr:main', 'detr_resnet50', pretrained=True)
+            #object_detector = torch.hub.load('facebookresearch/detr:main', 'detr_resnet50_dc5', pretrained=True)
+            #object_detector = torch.hub.load('facebookresearch/detr:main', 'detr_resnet101', pretrained=True)
+            #object_detector = torch.hub.load('facebookresearch/detr:main', 'detr_resnet101_dc5', pretrained=True)
+            object_detector = object_detector.to(device)
+            object_detector.eval();
 
         while True:
             world.world.tick()
@@ -586,7 +409,7 @@ def game_loop(args):
             # Detect objects in image and draw the resulting bounding boxes
             if args.integrate_object_detector:
                 if world.camera_manager.surface is not None:
-                    
+                    results = None
                     if args.fault_type != 'none':
                         
                         try:
@@ -604,24 +427,29 @@ def game_loop(args):
                             #    modified_image = SM.image_dehazing(modified_image)
                             #################################
 
-                            #detections = detect_objects(modified_image, 'localhost', 6000)
                             #resizing for model input compatibility
                             #print('modified_image', modified_image)
                             #modified_image = np.asarray(modified_image)
 
                             # sized = cv.resize(modified_image, (640, 640))
                             # sized = cv.cvtColor(sized, cv.COLOR_BGR2RGB)
-                            # # perform inference
-                            # results = yolov5.predict(sized, size=640)
-                            results = yolov5.predict(modified_image)
-                            #print('results', dir(results))
+
+                            # # perform inference with yolo or detectron
+                            if args.object_detector_type == 'yolo':
+                                results = object_detector.predict(modified_image)
+                                # results = object_detector.predict(sized, size=640)
+
+                            elif args.object_detector_type == 'detr':
+                                img = Image.fromarray((modified_image * 255).astype(np.uint8))
+                                scores, boxes = detr.detect(img, object_detector, device)
+                                results = [boxes, scores, detr.CLASSES]
 
                             real_time_view = pygame.surfarray.make_surface(modified_image.swapaxes(0, 1))
 
                         except Exception as e:
                             #print('Exception:', str(e))
                             with open("src/log/perception.csv", "a") as myfile:
-                                myfile.write('Exception during object image transformation for {}: {} \n'.format(str(args.fault_type), str(e)))
+                                myfile.write('Exception during object image transformation for {} using {}: {} \n'.format(str(args.fault_type), str(args.object_detector_type), str(e)))
 
                             real_time_view = pygame.surfarray.make_surface(world.camera_manager.np_image.swapaxes(0, 1))
 
@@ -631,19 +459,25 @@ def game_loop(args):
                         # #resizing for model input compatibility
                         # sized = cv.resize(original_image, (640, 640))
                         # sized = cv.cvtColor(sized, cv.COLOR_BGR2RGB)
-                        # # perform inference
-                        # results = yolov5.predict(sized, size=640)
-                        results = yolov5.predict(original_image)
-                        #print('results', dir(results))
+
+                        # # perform inference with yolo or detectron
+                        if args.object_detector_type == 'yolo':
+                            # results = object_detector.predict(sized, size=640)
+                            results = object_detector.predict(original_image)
+                            
+                        elif args.object_detector_type == 'detr':
+                            img = Image.fromarray((original_image * 255).astype(np.uint8))
+                            scores, boxes = detr.detect(img, object_detector, device)
+                            results = [boxes, scores, detr.CLASSES]
 
                         real_time_view = pygame.surfarray.make_surface(original_image.swapaxes(0, 1))
 
                     world.camera_manager.surface = real_time_view
                     #display.blit(real_time_view, (0, 0))
 
-                    draw_bboxes(world, carla, world.camera_manager, display,
-                            int(args.res.split('x')[0]), int(args.res.split('x')[1]), results, args)
-
+                    if results is not None:
+                        #print('results', results)
+                        draw_utils.draw_bboxes(world, carla, world.camera_manager, display, int(args.res.split('x')[0]), int(args.res.split('x')[1]), results, args)
                     
 
             pygame.display.flip()
@@ -930,6 +764,12 @@ def main():
                            help='Specify this flag if bounding boxes should be visualised using an object detector'
                                 'connected via IPC. For the integration, refer to this repository:'
                                 'https://gitlab.cc-asp.fraunhofer.de/carla/experimental/carla-object-detection-integration-yolov4/-/blob/master/carla_client_object_detection.py')
+    
+    argparser.add_argument('--object_detector_type', #it works when the argument --integrate-object-detector is activated too
+                           type=str,
+                           default='yolo',
+                           choices=['yolo', 'detr'],
+                           help='object detector model')
 
     argparser.add_argument('--no_intervention',
                            action='store_true',
@@ -938,9 +778,9 @@ def main():
     argparser.add_argument('--fault_type',
                            type=str,
                            default='none',
-                           choices=['brightness', 'contrast', 'saturate', 'sun_flare', 'rain', 'snow', 'smoke', 'pixel_trap', 'row_add_logic', 'shifted_pixel', 'channel_shuffle', 
+                           choices=['brightness', 'contrast', 'sun_flare', 'rain', 'snow', 'fog', 'smoke', 'pixel_trap', 'row_add_logic', 'shifted_pixel', 'channel_shuffle', 
                            'channel_dropout', 'coarse_dropout', 'grid_dropout', 'spatter', 'gaussian_noise', 'shot_noise', 'speckle_noise', 'defocus_blur', 'elastic_transform', 
-                           'impulse_noise', 'gaussian_blur', 'pixelate'],
+                           'impulse_noise', 'gaussian_blur', 'pixelate', 'ice', 'broken_lens', 'dirty', 'condensation'],
                            help='23 transformations from three types of OOD categories: Anomalies, distributional shift, and noise.')
 
     argparser.add_argument('--severity',
@@ -952,16 +792,14 @@ def main():
     ###########################################################################################
     ### fault_type
     #Distributional shift: 
-    #   In sensor's quality: 'brightness', 'contrast', 'saturate', 'speed' (not necessary fot the moment)
-    #   In the environment: 'sun_flare', 'rain', 'snow', 'smoke', 'shadow' (not necessary fot the moment)
+    #   In sensor's quality: 'brightness', 'contrast'
+    #   In the environment: 'sun_flare', 'rain', 'snow', 'smoke', 'fog' 
 
-    #Anomaly: 'row_add_logic', 'shifted_pixel', 'pixel_trap' (not necessary fot the moment)
-    # 'channel_shuffle', 'channel_dropout', 'coarse_dropout', 'grid_dropout'
+    #Anomaly: 'row_add_logic', 'shifted_pixel', 'channel_shuffle', 'channel_dropout', 'coarse_dropout', 'grid_dropout'
 
     #Noise: 'spatter', 'gaussian_noise', 'shot_noise', 'speckle_noise', 'defocus_blur',
     #'elastic_transform', 'impulse_noise', 'gaussian_blur', 'pixelate'
 
-    #does not work at this moment: 'glass_blur', 'zoom_blur'    
     ###########################################################################################
 
     args = argparser.parse_args()

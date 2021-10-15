@@ -12,7 +12,7 @@
    <ParameterDeclarations>
       <ParameterDeclaration name="HostVehicle" parameterType="string" value="car_white"/>
       <ParameterDeclaration name="HostSpeed" parameterType="double" value="9"/>
-      <ParameterDeclaration name="PedestrianSpeed" parameterType="double" value="1.6"/>
+      <ParameterDeclaration name="PedestrianSpeed" parameterType="double" value="3"/>
    </ParameterDeclarations>
    <CatalogLocations>
       <RouteCatalog>

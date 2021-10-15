@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-from PIL import Image
 import os.path
 import time
 #import torch
@@ -11,10 +10,11 @@ import time
 import numpy as np
 import math
 from PIL import Image
-import albumentations as AUG
 
 
 # /////////////// Distortion Helpers ///////////////
+
+import albumentations as AUG
 
 import skimage as sk
 from skimage.filters import gaussian
@@ -28,8 +28,6 @@ import cv2
 from scipy.ndimage import zoom as scizoom
 from scipy.ndimage.interpolation import map_coordinates
 import warnings
-
-import Automold as am
 import Helpers as hp
 
 
@@ -127,10 +125,63 @@ def clipped_zoom(img, zoom_factor):
     return img[trim_top:trim_top + h, trim_top:trim_top + h]
 
 
+def overly_img(img, foreground_image_path, alpha):
+
+    img2 = Image.open(foreground_image_path).convert(img.mode)
+    img2 = img2.resize(img.size)
+    img = Image.blend(img, img2, alpha=alpha)
+
+    return img
+
+
 # /////////////// End Distortion Helpers ///////////////
 
 
 # /////////////// Distortions ///////////////
+
+def fog_haze(x, severity=1):
+    
+    return img
+
+def ice(x, severity=1):
+    x = Image.fromarray((x * 255).astype(np.uint8))
+    foreground_image_path = ['src/img/ice2.png', 'src/img/ice2.png', 'src/img/ice3.png', 'src/img/ice3.png', 'src/img/ice4.png']
+    alpha = [0.3, 0.4, 0.4, 0.5, 0.6]
+    img = overly_img(x, foreground_image_path[severity-1], alpha[severity-1])
+    return img
+
+
+def broken_lens(x, severity=1):
+    x = Image.fromarray((x * 255).astype(np.uint8))
+    foreground_image_path = ['src/img/broken1.png', 'src/img/broken2.png', 'src/img/broken1.png', 'src/img/broken2.png', 'src/img/broken1.png']
+    alpha = [0.5, 0.5, 0.6, 0.6, 0.7]
+    img = overly_img(x, foreground_image_path[severity-1], alpha[severity-1])
+    return img
+
+
+def dirty(x, severity=1):
+    x = Image.fromarray((x * 255).astype(np.uint8))
+    foreground_image_path = ['src/img/dirty.png', 'src/img/dirty.png', 'src/img/dirty.png', 'src/img/dirty.png', 'src/img/dirty.png']
+    alpha = [0.4, 0.5, 0.6, 0.7, 0.8]
+    img = overly_img(x, foreground_image_path[severity-1], alpha[severity-1])
+    return img
+
+
+def rain_mask(x):
+    x = Image.fromarray((x * 255).astype(np.uint8))
+    foreground_image_path = 'src/img/rain.png'
+    alpha = 0.15
+    img = overly_img(x, foreground_image_path, alpha)
+    return img
+
+
+def condensation(x, severity=1):
+    x = Image.fromarray((x * 255).astype(np.uint8))
+    foreground_image_path = ['src/img/condensation1.png', 'src/img/condensation1.png', 'src/img/condensation1.png', 'src/img/condensation1.png', 'src/img/condensation1.png']
+    alpha = [0.1, 0.2, 0.3, 0.4, 0.5]
+    img = overly_img(x, foreground_image_path[severity-1], alpha[severity-1])
+    return img
+
 
 def gaussian_noise(x, severity=1):
     c = [0.04, 0.06, .08, .09, .10][severity - 1]
@@ -243,41 +294,6 @@ def fog(x, severity=1):
     max_val = x.max()
     x += c[0] * plasma_fractal(mapsize=mapsize, wibbledecay=c[1])[:x.shape[1], :x.shape[1]][..., np.newaxis]
     return np.clip(x * max_val / (max_val + c[0]), 0, 1) * 255
-
-
-def automold(image, transformation_type, severity):
-    #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-    if transformation_type == 'shadow':
-        image= am.add_shadow(image)
-    elif transformation_type == 'snow':
-        image=am.add_snow(image)
-    elif transformation_type == 'random_brightness':
-        image=am.random_brightness(image)
-    elif transformation_type == 'rain':
-        image=am.add_rain(image)
-    elif transformation_type == 'fog':
-        image=am.add_fog(image)
-    elif transformation_type == 'gravel':
-        image=am.add_gravel(image)
-    elif transformation_type == 'sun_flare':
-        image=am.add_sun_flare(image, flare_center=(100,100), angle=-math.pi/4)
-    elif transformation_type == 'speed':
-        image=am.add_speed(image)
-    elif transformation_type == 'autumn':
-        image=am.add_autumn(image)
-    elif transformation_type == 'random_flip':
-        image=am.random_flip(image)
-    elif transformation_type == 'manhole':
-        image=am.add_manhole(image)
-    elif transformation_type == 'exposure':
-        image=am.correct_exposure(image)
-    
-    image *= 255
-
-    #image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-    return image
 
 
 def frost(x, severity=1):
@@ -482,10 +498,7 @@ def elastic_transform(image, severity=1):
 
 def pixel_trap(image, severity=1):
     levels = [int(image.shape[2] / 0.05), int(image.shape[2] / 0.03), int(image.shape[2] / 0.01)]
-    #print(int(image.shape[2] / 0.05)) #60 black lines
-    #print(int(image.shape[2] / 0.03)) #100 black lines
-    #print(int(image.shape[2] / 0.01)) # 300 black lines
-    #print('======')
+    
     indices = np.random.choice(image.shape[0], levels[severity-1], replace=False)
     image[indices] = 0
 
@@ -514,7 +527,6 @@ def shifted_pixel(image, severity=1):
 
 
 def apply_threats(img, aug_type, severity):
-    #print('severity', severity, type(severity))
     transform = None
 
     if aug_type == 'sun_flare':
@@ -555,12 +567,27 @@ def apply_threats(img, aug_type, severity):
             transform = AUG.RandomFog(fog_coef_lower=0, fog_coef_upper=0, alpha_coef=0.0, always_apply=True)
 
     elif aug_type == 'rain':
-        rain_types = ['drizzle', 'heavy', 'torrential', 'heavy', 'torrential']
+        mask=False
+        rain_types = ['drizzle', 'heavy', 'torrential', 'heavy_rain_mask', 'torrential_rain_mask']
         try:
+            if rain_types[severity-1] == 'heavy_rain_mask':
+                mask=True
+                rain_types[severity-1] = 'heavy'
+                
+            elif rain_types[severity-1] == 'torrential_rain_mask':
+                mask=True
+                rain_types[severity-1] = 'torrential'
+                
             transform = AUG.RandomRain(slant_lower=-10, slant_upper=10, 
-                              drop_length=20, drop_width=1, drop_color=(200, 200, 200), 
-                              blur_value=7, brightness_coefficient=0.7, 
-                              rain_type=rain_types[severity-1], always_apply=True)
+                          drop_length=20, drop_width=1, drop_color=(200, 200, 200), 
+                          blur_value=7, brightness_coefficient=0.7, 
+                          rain_type=rain_types[severity-1], always_apply=True)
+            if mask:    
+                image = transform(image=img)['image']
+                #image *= 255
+                image=rain_mask(image)
+                return image
+
         except:
             transform = AUG.RandomRain(slant_lower=-10, slant_upper=10, 
                               drop_length=20, drop_width=1, drop_color=(200, 200, 200), 
@@ -641,24 +668,18 @@ def apply_threats(img, aug_type, severity):
                            always_apply=True
                            )
 
-
-    # Not used in this moment
+    # Not used at this moment
     elif aug_type == 'shadow':
         transform = AUG.RandomShadow(shadow_roi=(0, 0.5, 1, 1), 
                             num_shadows_lower=1, num_shadows_upper=1, 
                             shadow_dimension=2, always_apply=True)
 
-    # Not used in this moment
-    elif aug_type == 'speed':
-        image=am.add_speed(img)
-        return image * 255
-
-    # Not used in this moment
+    # Not used at this moment
     elif aug_type == 'saturate':
         image=saturate(img)
         return image
 
-    # Not used in this moment
+    # Not used at this moment
     elif aug_type == 'defocus_blur':
         image=defocus_blur(img, severity)
         return image
@@ -694,6 +715,26 @@ def apply_threats(img, aug_type, severity):
 
     elif aug_type == 'row_add_logic':
         image=row_add_logic(img, severity)
+        return image
+
+    elif aug_type == 'ice':
+        image=ice(img, severity)
+        return image
+
+    elif aug_type == 'broken_lens':
+        image=broken_lens(img, severity)
+        return image
+
+    elif aug_type == 'condensation':
+        image=condensation(img, severity)
+        return image
+
+    elif aug_type == 'dirty':
+        image=dirty(img, severity)
+        return image
+
+    elif aug_type == 'fog':
+        image=fog_haze(img, severity)
         return image
 
 

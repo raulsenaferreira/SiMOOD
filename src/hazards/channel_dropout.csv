@@ -1,0 +1,3 @@
+SEVERITY: 2; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {238: 'Pedestrian 0001Pedestrian 0001Pedestrian 0001'}) 
+SEVERITY: 4; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {245: 'Pedestrian 0001Pedestrian 0001'}) 
+SEVERITY: 5; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {242: 'Pedestrian 0001Pedestrian 0001Pedestrian 0001'}) 
