@@ -104,6 +104,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+v_env/
 env/
 venv/
 ENV/
@@ -127,3 +128,13 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# ML model
+*.pth
+yolov5/
+
+# carla folders
+carla/
+agents/
+.carla/
+.agents/
