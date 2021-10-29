@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CARLA_HOME='/opt/carla-simulator/'
-HOME=${CARLA_HOME}'PythonAPI/collab_laas/'
+HOME=${CARLA_HOME}'PythonAPI/Fraunhofer_LAAS_Safety_Monitors/'
 LOG_PATH=${HOME}'src/log/'
 SCENARIO_EXECUTOR_PATH='src/server_ipc_yolo5.py'
 OUTPUT_DIR='src/scenario_test'

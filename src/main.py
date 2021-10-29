@@ -94,8 +94,10 @@ import corruptions
 from PIL import Image
 import cv2 as cv
 
-import safety_monitors as SM
+from safety_monitors import baseline_safety_monitors as SM_base
 from yolov5 import YOLOv5
+import AEBS
+import data_utils
 import draw_utils
 import torch
 from facebook import DETR as detr
@@ -267,8 +269,6 @@ def calculate_camera_calibration(image_width, image_height, fov):
     return calibration
 
 
-##draw_utils
-
 
 def game_loop(args):
     pygame.init()
@@ -374,20 +374,25 @@ def game_loop(args):
             # IKS: Store actor states
             world_state_queue = []
 
+        # Storing images for saving as RGB images in the end of simulation
         image_queue = []
-        
+        # How much frames should be considered for safety monitoring using a temporal approach
+        frame_counter = 0
+        frame_interval = 1
+        array_data = []
         # SM should react or not ?
         react = False
-
+        #obj detector model
         object_detector = None
+        LOCK = False
 
-        if args.object_detector_type == 'yolo':
+        if args.object_detector_model == 'yolo':
             # set model params
             model_path = "yolov5/weights/yolov5s.pt" # it automatically downloads yolov5s model to given path
             device = 'cuda' if torch.cuda.is_available() else 'cpu'
             # init yolov5 model
             object_detector = YOLOv5(model_path, device)
-        elif args.object_detector_type == 'detr':
+        elif args.object_detector_model == 'detr':
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
             object_detector = torch.hub.load('facebookresearch/detr:main', 'detr_resnet50', pretrained=True)
@@ -421,25 +426,20 @@ def game_loop(args):
                             image_queue.append(modified_image)
 
                             #################################
-                            # verify fog conditions
-                            #react = SM.foggy(modified_image)
-                            #if react:
-                            #    modified_image = SM.image_dehazing(modified_image)
+                            # initialize the safety monitor object
+                            # verify image conditions and correct the image if necessary
+                            SM = SM_base.Safety_monitor(modified_image, verification='pre')
+                            modified_image, has_reacted = SM.run()
+                            #print('has_reacted:', has_reacted)
                             #################################
 
-                            #resizing for model input compatibility
-                            #print('modified_image', modified_image)
-                            #modified_image = np.asarray(modified_image)
+                            #modified_image = cv.cvtColor(modified_image, cv.COLOR_BGR2RGB)
 
-                            # sized = cv.resize(modified_image, (640, 640))
-                            # sized = cv.cvtColor(sized, cv.COLOR_BGR2RGB)
-
-                            # # perform inference with yolo or detectron
-                            if args.object_detector_type == 'yolo':
+                            # # perform inference with yolo or detectron2
+                            if args.object_detector_model == 'yolo':
                                 results = object_detector.predict(modified_image)
-                                # results = object_detector.predict(sized, size=640)
 
-                            elif args.object_detector_type == 'detr':
+                            elif args.object_detector_model == 'detr':
                                 img = Image.fromarray((modified_image * 255).astype(np.uint8))
                                 scores, boxes = detr.detect(img, object_detector, device)
                                 results = [boxes, scores, detr.CLASSES]
@@ -447,9 +447,8 @@ def game_loop(args):
                             real_time_view = pygame.surfarray.make_surface(modified_image.swapaxes(0, 1))
 
                         except Exception as e:
-                            #print('Exception:', str(e))
                             with open("src/log/perception.csv", "a") as myfile:
-                                myfile.write('Exception during object image transformation for {} using {}: {} \n'.format(str(args.fault_type), str(args.object_detector_type), str(e)))
+                                myfile.write('Exception during object image transformation for {} using {}: {} \n'.format(str(args.fault_type), str(args.object_detector_model), str(e)))
 
                             real_time_view = pygame.surfarray.make_surface(world.camera_manager.np_image.swapaxes(0, 1))
 
@@ -461,11 +460,11 @@ def game_loop(args):
                         # sized = cv.cvtColor(sized, cv.COLOR_BGR2RGB)
 
                         # # perform inference with yolo or detectron
-                        if args.object_detector_type == 'yolo':
+                        if args.object_detector_model == 'yolo':
                             # results = object_detector.predict(sized, size=640)
                             results = object_detector.predict(original_image)
                             
-                        elif args.object_detector_type == 'detr':
+                        elif args.object_detector_model == 'detr':
                             img = Image.fromarray((original_image * 255).astype(np.uint8))
                             scores, boxes = detr.detect(img, object_detector, device)
                             results = [boxes, scores, detr.CLASSES]
@@ -476,8 +475,58 @@ def game_loop(args):
                     #display.blit(real_time_view, (0, 0))
 
                     if results is not None:
-                        #print('results', results)
-                        draw_utils.draw_bboxes(world, carla, world.camera_manager, display, int(args.res.split('x')[0]), int(args.res.split('x')[1]), results, args)
+                        frame_counter += 1
+                        view_width, view_height = int(args.res.split('x')[0]), int(args.res.split('x')[1])
+                        #drawing boxes from predictions. Variable detected_objects is an array of bboxes (already converted in a good format to be used 
+                        # in pygame operations), scores, and labels 
+                        detected_objects_per_frame, safety_surface, WARNING_AREA, DANGER_AREA = draw_utils.draw_bboxes(
+                            world, carla, world.camera_manager, display, view_width, view_height, results, args)
+                        
+                        array_data.append(detected_objects_per_frame)
+                        
+                        if frame_counter == frame_interval:
+                            frame_counter = 0
+
+                            #################################
+                            # temporal monitoring (monitors the coherence of the ML predictions)
+                            dummy_surface = pygame.Surface((view_width, view_height)) #just for polygon calculation purposes
+                            SM = SM_base.Safety_monitor((array_data, dummy_surface), verification='post')
+                            array_data, has_reacted = SM.run() 
+                            
+                            print('has_reacted:', has_reacted)
+                            #################################
+
+                            ########## main functionality is also applied in a small set of frames. To apply frame by frame just change "frame_interval=1"
+                            AEBS_activated = AEBS.emergency_braking(world, carla, display, safety_surface, WARNING_AREA, DANGER_AREA, array_data, args)
+                            ########## main functionality
+
+                            array_data = [] 
+
+                        #################################
+                        # initialize the safety monitor object
+                        # verifying threats after the perception system decision
+
+                        # #we perform a monitoring according to a specific object
+                        # target_class = 'person' 
+                        # # array_data_per_frame it's an array of objects representing the target class
+                        # array_data_per_frame = data_utils.compose_data(results, args, array_data, target_class, view_width, view_height)
+
+                        # if len(array_data_per_frame) > 0:
+                        #     array_data.append(array_data_per_frame)
+
+                        # # temporal monitoring functions (monitors the functionality)
+                        # if frame_counter == frame_interval:
+                        #     frame_counter = 0
+                        #     if len(array_data) > 0 and AEBS_activated==False and LOCK==False:
+                        #         dummy_surface = pygame.Surface((view_width, view_height)) #just for polygon calculation purposes
+                        #         SM = SM_base.Safety_monitor((array_data, dummy_surface), verification='post')
+                        #         _, has_reacted = SM.run() 
+                                
+                        #         array_data = []
+                        #     elif AEBS_activated:
+                        #         LOCK = AEBS_activated
+                        #print('has_reacted:', has_reacted)
+                        #################################
                     
 
             pygame.display.flip()
@@ -765,7 +814,7 @@ def main():
                                 'connected via IPC. For the integration, refer to this repository:'
                                 'https://gitlab.cc-asp.fraunhofer.de/carla/experimental/carla-object-detection-integration-yolov4/-/blob/master/carla_client_object_detection.py')
     
-    argparser.add_argument('--object_detector_type', #it works when the argument --integrate-object-detector is activated too
+    argparser.add_argument('--object_detector_model', #it works when the argument --integrate-object-detector is activated too
                            type=str,
                            default='yolo',
                            choices=['yolo', 'detr'],
