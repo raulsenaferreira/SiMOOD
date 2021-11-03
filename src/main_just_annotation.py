@@ -99,13 +99,21 @@ import AEBS
 import data_utils
 import draw_utils
 import torch
-
+from facebook import DETR as detr
 import bbox_oracle
 
 # ==============================================================================
 # -- Global functions ----------------------------------------------------------
 # ==============================================================================
 
+
+def is_rect_overlap(bbox,R2):
+    R1 = pygame.Rect(bbox)
+
+    if R1.colliderect(R2):
+        return True
+    else:
+        return False
 
 def get_actor_display_name(actor, truncate=250):
     name = ' '.join(actor.type_id.replace('_', '.').title().split('.')[1:])
@@ -373,8 +381,33 @@ def game_loop(args):
 
         # Storing images for saving as RGB images in the end of simulation
         image_queue = []
-
         frame_num = 0
+
+        #obj detector model
+        object_detector = None
+
+        if args.object_detector_model == 'yolo':
+            # set model params
+            model_path = "yolov5/weights/yolov5s.pt" # it automatically downloads yolov5s model to given path
+            device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            # init yolov5 model
+            object_detector = YOLOv5(model_path, device)
+        elif args.object_detector_model == 'detr':
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+            object_detector = torch.hub.load('facebookresearch/detr:main', 'detr_resnet50', pretrained=True)
+            #object_detector = torch.hub.load('facebookresearch/detr:main', 'detr_resnet50_dc5', pretrained=True)
+            #object_detector = torch.hub.load('facebookresearch/detr:main', 'detr_resnet101', pretrained=True)
+            #object_detector = torch.hub.load('facebookresearch/detr:main', 'detr_resnet101_dc5', pretrained=True)
+            object_detector = object_detector.to(device)
+            object_detector.eval();
+
+        #for evaluation purposes
+        true_pos, true_neg, false_pos, false_neg = [], [], [], []
+
+        # if you want to limit the summing of false/true postivies/negatives to a specific 'important region' instead
+        pos_neg_just_for_important_region = True
+        #important_region = WARNING_AREA
 
         while True:
             world.world.tick()
@@ -385,9 +418,21 @@ def game_loop(args):
 
             world.render(display)
 
+            results = None
+
             if world.camera_manager.surface is not None:
                 original_image = world.camera_manager.np_image
                 image_queue.append(original_image)
+
+                # # perform inference with yolo or detectron2
+                modified_image = original_image
+                if args.object_detector_model == 'yolo':
+                    results = object_detector.predict(modified_image)
+
+                elif args.object_detector_model == 'detr':
+                    img = Image.fromarray((modified_image * 255).astype(np.uint8))
+                    scores, boxes = detr.detect(img, object_detector, device)
+                    results = [boxes, scores, detr.CLASSES]
                 
                 real_time_view = pygame.surfarray.make_surface(original_image.swapaxes(0, 1))
 
@@ -398,7 +443,10 @@ def game_loop(args):
             pygame.event.pump()
 
             ########## oracle for the real bounding boxes of an object
-            show_bbox_screen = True
+            #for evaluatiion purposes
+            true_pos_per_frame, true_neg_per_frame, false_pos_per_frame, false_neg_per_frame = 0, 0, 0, 0
+
+            show_bbox_screen = False
             image = semantic_seg_queue[frame_num]
             frame_num+=1
             # Convert semantic segmentation image to city scapes color palette
@@ -407,12 +455,62 @@ def game_loop(args):
             view_width, view_height = int(args.res.split('x')[0]), int(args.res.split('x')[1])
 
             for actor in world.world.get_actors():
-                # verifying just bounding boxes of pedestrians
-                if actor.type_id.startswith('walker'):
-                    real_bbox = bbox_oracle.get_bounding_box_actor(display, actor, world.camera_manager.sensor, image, view_width, view_height, show_bbox_screen)
+                real_bbox = None
 
-            pygame.display.flip()
-            pygame.event.pump()
+                # verifying just bounding boxes of pedestrians ('walker' in Carla == 'person' in COCO dataset)
+                if actor.type_id.startswith('walker'):
+                    target_object_label = 'person'
+                    real_bbox = bbox_oracle.get_bounding_box_actor(display, actor, world.camera_manager.sensor, image, view_width, view_height, show_bbox_screen)
+                    
+                    pygame.display.flip()
+                    pygame.event.pump()
+
+                    ########## evaluating the prediction bbox regarding the real bbox
+                    ### We are not interested in the exact accuracy of the bounding boxes but if the ML model was able to correctly find the object in an image
+                    if results is not None and real_bbox is not None:
+                        view_width, view_height = int(args.res.split('x')[0]), int(args.res.split('x')[1])
+                        #drawing boxes from predictions
+                        detected_objects_per_frame, safety_surface, WARNING_AREA, DANGER_AREA = draw_utils.draw_bboxes(
+                            world, carla, world.camera_manager, display, view_width, view_height, results, args)
+
+                        important_region = WARNING_AREA
+
+                        for det_object in detected_objects_per_frame:
+                            predicted_bbox = det_object[0]
+                            predicted_class = det_object[2]
+
+                            if pos_neg_just_for_important_region:
+
+                                if is_rect_overlap(important_region, pygame.Rect(real_bbox)):
+
+                                    if is_rect_overlap(predicted_bbox, pygame.Rect(real_bbox)):
+                                    
+                                        if target_object_label == predicted_class:
+                                            #true positive
+                                            true_pos_per_frame+=1
+                                        else:
+                                            #false positive
+                                            false_pos_per_frame+=1
+                                    else:
+                                        # there is a pedestrian but the ML did not produced a bbox for this object
+                                        #false negative
+                                        false_neg_per_frame+=1
+                            else:
+                                if is_rect_overlap(predicted_bbox, pygame.Rect(real_bbox)):
+                                    if target_object_label == predicted_class:
+                                        #true positive
+                                        true_pos_per_frame+=1
+                                    else:
+                                        #false positive
+                                        false_pos_per_frame+=1
+                                else:
+                                    # there is a pedestrian but the ML did not produced a bbox for any object
+                                    #false negative
+                                    false_neg_per_frame+=1
+                    ##########
+            true_pos.append(true_pos_per_frame)
+            false_pos.append(false_pos_per_frame)
+            false_neg.append(false_neg_per_frame)
             ##########
 
             # If the scenario has ended, save the recorded data and exit
@@ -561,6 +659,11 @@ def game_loop(args):
                 return
 
     finally:
+
+        print('true_pos', np.sum(true_pos))
+        print('false_pos', np.sum(false_pos))
+        print('false_neg', np.sum(false_neg))
+
         if world is not None:
             world.destroy()
 
