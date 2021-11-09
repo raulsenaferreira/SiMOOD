@@ -10,7 +10,7 @@ import time
 import numpy as np
 import math
 from PIL import Image
-
+from skimage.transform import rescale, resize
 
 # /////////////// Distortion Helpers ///////////////
 
@@ -526,7 +526,67 @@ def shifted_pixel(image, severity=1):
     return image * 255
 
 
+
+
+def apply_novelty(RGBA_x, severity, frame_num):
+    scale_factor = 20
+
+    foreground_image_path = ['src/img/fallen_tree.png', 'src/img/overturned_Truck.png']
+    foreground_image = foreground_image_path[severity-1]    
+
+    #x = Image.fromarray((x * 255).astype(np.uint8))
+
+    # width = x.shape[0]
+    # height = x.shape[1]
+
+
+    def lol(bg, fg):
+        text_img = Image.new('RGBA', (bg.width,bg.height), (0, 0, 0, 0))
+        text_img.paste(bg,((text_img.width - bg.width) // 2, (text_img.height - bg.height) // 2))
+        text_img.paste(fg, ((text_img.width - fg.width) // 2, (text_img.height - fg.height) // 2), mask=fg.split()[3])
+        return text_img
+
+    
+    #background_img = Image.fromarray((x * 255).astype(np.uint8))
+    background_img = Image.fromarray((RGBA_x).astype(np.uint8))
+    #print('background_img.mode', background_img.mode)
+    img2 = Image.open(foreground_image).convert('RGBA')
+
+    img2 = np.array(img2)
+
+    if frame_num < scale_factor:
+        print('img2.shape', img2.shape)
+        img2=np.resize(img2, (img2.shape[0]//frame_num, img2.shape[1]//frame_num, 4))
+        print('MODIFIED img2.shape', img2.shape)
+        img2 = Image.fromarray((img2).astype(np.uint8))
+    
+    
+
+    #x, y = background_img.size
+
+    #background_img.paste(img2, (100, 50))
+
+    # it works
+    #img2 = img2.resize(background_img.size)
+    #img = Image.blend(img2,background_img, alpha=alpha)
+
+    img_rgba = lol(background_img, img2)
+    img_rgba = np.array(img_rgba)
+    rgba_modified_img = img_rgba.copy()
+
+    modified_image = img_rgba[:, :, :3]
+    modified_image = modified_image[:, :, ::-1]
+
+    return modified_image, rgba_modified_img
+
+
+
 def apply_threats(img, aug_type, severity):
+    img = img[:, :, :3]
+    img = img[:, :, ::-1]
+    img = img / 255
+    img = np.array(img, dtype=np.float32)
+
     transform = None
 
     if aug_type == 'sun_flare':
@@ -683,7 +743,6 @@ def apply_threats(img, aug_type, severity):
     elif aug_type == 'defocus_blur':
         image=defocus_blur(img, severity)
         return image
-
 
     elif aug_type == 'shot_noise':
         image=shot_noise(img, severity)

@@ -404,7 +404,7 @@ def game_loop(args):
             object_detector.eval();
 
         #for evaluation purposes
-        true_pos, true_neg, false_pos, false_neg = [], [], [], []
+        true_pos_SUT, true_neg_SUT, false_pos_SUT, false_neg_SUT = [], [], [], []
 
         # if you want to limit the summing of false/true postivies/negatives to a specific 'important region' instead
         pos_neg_just_for_important_region = True
@@ -450,7 +450,7 @@ def game_loop(args):
 
             ########## oracle for the real bounding boxes of an object
             #for evaluatiion purposes
-            true_pos_per_frame, true_neg_per_frame, false_pos_per_frame, false_neg_per_frame = 0, 0, 0, 0
+            true_pos_SUT_per_frame, true_neg_SUT_per_frame, false_pos_SUT_per_frame, false_neg_SUT_per_frame = 0, 0, 0, 0
 
             show_bbox_screen = False
             image = semantic_seg_queue[frame_num]
@@ -462,9 +462,11 @@ def game_loop(args):
 
             important_region = WARNING_AREA
 
+            ############################### SUT evaluation => ML model alone without SM ###############################
+
             for actor in world.world.get_actors():
                 real_bbox = None
-
+                
                 # verifying just real bounding boxes of pedestrians (e.g., ('walker' inside Carla) == ('person' inside COCO dataset))
                 if actor.type_id.startswith('walker'):
                     target_object_label = 'person'
@@ -476,69 +478,50 @@ def game_loop(args):
                     ########## evaluating the predicted bbox regarding the real bbox ##########
                     # We are not interested in the exact accuracy of the bounding boxes but if the ML model was able to correctly find the object in an image
                     if real_bbox is not None:
-                        # if you want to limit the summing of false/true postivies/negatives to a specific 'important region' instead
-                        if pos_neg_just_for_important_region:
-                            
-                            if important_region is not None:
-                                # real pedestrian entered in the important region
-                                if is_rect_overlap(important_region, pygame.Rect(real_bbox)):
-                                    
-                                    for det_object in detected_objects_per_frame:
-                                        predicted_bbox = det_object[0]
-                                        predicted_class = det_object[2]
 
-                                        # search for a predicted pedestrian that intersects with the real pedestrian that entered in the important region
-                                        if is_rect_overlap(important_region, predicted_bbox):
+                        if important_region is not None:
+                            # real pedestrian entered in the important region
+                            if is_rect_overlap(important_region, pygame.Rect(real_bbox)):
+                                
+                                for det_object in detected_objects_per_frame:
+                                    predicted_bbox = det_object[0]
+                                    predicted_class = det_object[2]
 
-                                            #there is a real pedestrian and the ML detected it (true positive)
-                                            if target_object_label == predicted_class: 
-                                                true_pos_per_frame+=1
+                                    # search for a predicted pedestrian that intersects with the real pedestrian that entered in the important region
+                                    if is_rect_overlap(important_region, predicted_bbox):
 
-                                            #there is a real pedestrian and the ML detected it as another object (false negative)
-                                            else: 
-                                                false_neg_per_frame+=1
+                                        #there is a real pedestrian and the ML detected it (true positive)
+                                        if target_object_label == predicted_class: 
+                                            true_pos_SUT_per_frame+=1
 
-                                # NO real pedestrian entered in the important region
-                                else:
-
-                                    for det_object in detected_objects_per_frame:
-                                        predicted_bbox = det_object[0]
-                                        predicted_class = det_object[2]
-
-                                        # search for a predicted pedestrian that entered in the important region (when actually there is no real pedestrian on that region)
-                                        if is_rect_overlap(important_region, predicted_bbox):
-
-                                            #there is NO real pedestrian and the ML detected it anyway (false positive)
-                                            if target_object_label == predicted_class: 
-                                                false_pos_per_frame+=1
-
-                                        #there is NO real pedestrian in the important region and the ML correctly did not detected anything (true negative)
+                                        #there is a real pedestrian and the ML detected it as another object (false negative)
                                         else: 
-                                            true_neg_per_frame+=1
+                                            false_neg_SUT_per_frame+=1
 
-                        else:
+                            # NO real pedestrian entered in the important region
+                            else:
 
-                            for det_object in detected_objects_per_frame:
-                                predicted_bbox = det_object[0]
-                                predicted_class = det_object[2]
+                                for det_object in detected_objects_per_frame:
+                                    predicted_bbox = det_object[0]
+                                    predicted_class = det_object[2]
 
-                                if is_rect_overlap(predicted_bbox, pygame.Rect(real_bbox)):
-                                    if target_object_label == predicted_class:
-                                        #true positive
-                                        true_pos_per_frame+=1
-                                    else:
-                                        #false positive
-                                        false_neg_per_frame+=1
-                                else:
-                                    # there is a pedestrian but the ML did not produced a bbox for any object
-                                    #false negative
-                                    false_neg_per_frame+=1
+                                    # search for a predicted pedestrian that entered in the important region (when actually there is no real pedestrian on that region)
+                                    if is_rect_overlap(important_region, predicted_bbox):
+
+                                        #there is NO real pedestrian and the ML detected it anyway (false positive)
+                                        if target_object_label == predicted_class: 
+                                            false_pos_SUT_per_frame+=1
+
+                                    #there is NO real pedestrian in the important region and the ML correctly did not detected anything (true negative)
+                                    else: 
+                                        true_neg_SUT_per_frame+=1
+
                     ##########
-            true_pos.append(true_pos_per_frame)
-            true_neg.append(true_neg_per_frame)
-            false_pos.append(false_pos_per_frame)
-            false_neg.append(false_neg_per_frame)
-            ##########
+            true_pos_SUT.append(true_pos_SUT_per_frame)
+            true_neg_SUT.append(true_neg_SUT_per_frame)
+            false_pos_SUT.append(false_pos_SUT_per_frame)
+            false_neg_SUT.append(false_neg_SUT_per_frame)
+            ############################### SUT evaluation => ML model alone without SM ###############################
 
             # If the scenario has ended, save the recorded data and exit
             if SCENARIO_PROCESS.poll() is not None:
@@ -687,10 +670,10 @@ def game_loop(args):
 
     finally:
 
-        print('true_pos', np.sum(true_pos))
-        print('false_pos', np.sum(false_pos))
-        print('true_neg', np.sum(true_neg))
-        print('false_neg', np.sum(false_neg))
+        print('true_pos_SUT', np.sum(true_pos_SUT))
+        print('false_pos_SUT', np.sum(false_pos_SUT))
+        print('true_neg_SUT', np.sum(true_neg_SUT))
+        print('false_neg_SUT', np.sum(false_neg_SUT))
 
         if world is not None:
             world.destroy()

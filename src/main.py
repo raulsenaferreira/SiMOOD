@@ -270,6 +270,31 @@ def calculate_camera_calibration(image_width, image_height, fov):
 
 
 
+import pygame.pixelcopy
+
+def make_surface_rgba(array):
+    """Returns a surface made from a [w, h, 4] numpy array with per-pixel alpha
+    """
+    shape = array.shape
+    if len(shape) != 3 and shape[2] != 4:
+        raise ValueError("Array not RGBA")
+
+    # Create a surface the same width and height as array and with
+    # per-pixel alpha.
+    surface = pygame.Surface(shape[0:2], pygame.SRCALPHA, 32)
+
+    # Copy the rgb part of array to the new surface.
+    pygame.pixelcopy.array_to_surface(surface, array[:,:,0:3])
+
+    # Copy the alpha part of array to the surface using a pixels-alpha
+    # view of the surface.
+    surface_alpha = np.array(surface.get_view('A'), copy=False)
+    surface_alpha[:,:] = array[:,:,3]
+
+    return surface
+
+
+
 def game_loop(args):
     pygame.init()
     pygame.font.init()
@@ -378,7 +403,7 @@ def game_loop(args):
         image_queue = []
         # How much frames should be considered for safety monitoring using a temporal approach
         frame_counter = 0
-        frame_interval = 1
+        frame_interval = 30
         array_data = []
         # SM should react or not ?
         react = False
@@ -418,11 +443,19 @@ def game_loop(args):
                     if args.fault_type != 'none':
                         
                         try:
+                            frame_counter += 1
                             ### Modifying the scenario on the fly with some corruptions
-                            original_image = world.camera_manager.np_image / 255
-                            original_image = np.array(original_image, dtype=np.float32)
-                            modified_image = corruptions.apply_threats(original_image, args.fault_type, int(args.severity))
-                            modified_image = np.array(modified_image, dtype=np.float32)
+                            original_image = world.camera_manager.np_image #RGBA
+
+                            if args.fault_type == 'novelty' or args.fault_type == 'anomaly':
+                                modified_image, rgba_modified_img = corruptions.apply_novelty(original_image, int(args.severity), frame_counter)
+                                modified_image = np.array(modified_image, dtype=np.float32)
+
+                                #new_surface = make_surface_rgba(modified_image.swapaxes(0, 1))
+                                new_surface = pygame.surfarray.make_surface(modified_image.swapaxes(0, 1))
+                            else:
+                                modified_image = corruptions.apply_threats(original_image, args.fault_type, int(args.severity))
+
                             image_queue.append(modified_image)
 
                             #################################
@@ -444,13 +477,17 @@ def game_loop(args):
                                 scores, boxes = detr.detect(img, object_detector, device)
                                 results = [boxes, scores, detr.CLASSES]
 
-                            real_time_view = pygame.surfarray.make_surface(modified_image.swapaxes(0, 1))
+                            real_time_view = new_surface #pygame.surfarray.make_surface(modified_image.swapaxes(0, 1))
 
                         except Exception as e:
                             with open("src/log/perception.csv", "a") as myfile:
                                 myfile.write('Exception during object image transformation for {} using {}: {} \n'.format(str(args.fault_type), str(args.object_detector_model), str(e)))
 
-                            real_time_view = pygame.surfarray.make_surface(world.camera_manager.np_image.swapaxes(0, 1))
+                            #real_time_view = make_surface_rgba(world.camera_manager.np_image.swapaxes(0, 1))
+                            original_image = original_image[:, :, :3]
+                            original_image = original_image[:, :, ::-1]
+                            
+                            real_time_view = pygame.surfarray.make_surface(original_image.swapaxes(0, 1))
 
                     else:
                         original_image = world.camera_manager.np_image
@@ -475,7 +512,7 @@ def game_loop(args):
                     #display.blit(real_time_view, (0, 0))
 
                     if results is not None:
-                        frame_counter += 1
+                        #frame_counter += 1
                         view_width, view_height = int(args.res.split('x')[0]), int(args.res.split('x')[1])
                         #drawing boxes from predictions. Variable detected_objects is an array of bboxes (already converted in a good format to be used 
                         # in pygame operations), scores, and labels 
@@ -493,7 +530,7 @@ def game_loop(args):
                             SM = SM_base.Safety_monitor((array_data, dummy_surface), verification='post')
                             array_data, has_reacted = SM.run() 
                             
-                            print('has_reacted:', has_reacted)
+                            #print('has_reacted:', has_reacted)
                             #################################
 
                             ########## main functionality is also applied in a small set of frames. To apply frame by frame just change "frame_interval=1"
@@ -829,8 +866,8 @@ def main():
                            default='none',
                            choices=['brightness', 'contrast', 'sun_flare', 'rain', 'snow', 'fog', 'smoke', 'pixel_trap', 'row_add_logic', 'shifted_pixel', 'channel_shuffle', 
                            'channel_dropout', 'coarse_dropout', 'grid_dropout', 'spatter', 'gaussian_noise', 'shot_noise', 'speckle_noise', 'defocus_blur', 'elastic_transform', 
-                           'impulse_noise', 'gaussian_blur', 'pixelate', 'ice', 'broken_lens', 'dirty', 'condensation'],
-                           help='23 transformations from three types of OOD categories: Anomalies, distributional shift, and noise.')
+                           'impulse_noise', 'gaussian_blur', 'pixelate', 'ice', 'broken_lens', 'dirty', 'condensation', 'novelty', 'anomaly'],
+                           help='25 transformations from four types of OOD categories: novelty class, anomalies, distributional shift, and noise.')
 
     argparser.add_argument('--severity',
                            type=str,

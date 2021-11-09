@@ -985,7 +985,8 @@ class CameraManager(object):
             # We need to pass the lambda a weak reference to self to avoid
             # circular reference.
             weak_self = weakref.ref(self)
-            self.sensor.listen(lambda image: CameraManager._parse_image(weak_self, image))
+            #self.sensor.listen(lambda image: CameraManager._parse_image(weak_self, image))
+            self.sensor.listen(lambda image: CameraManager._get_RGBA_image(weak_self, image)) ## LAAS
         if notify:
             self.hud.notification(self.sensors[index][2])
         self.index = index
@@ -1036,6 +1037,54 @@ class CameraManager(object):
             array = array[:, :, :3]
             array = array[:, :, ::-1]
             self.np_image = array
+            self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
+
+        if self.recording:
+            image.save_to_disk('_out/%08d' % image.frame)
+
+        # IKS: Execute the injected listener
+        if self.injected_listener is not None:
+            self.injected_listener(image)
+
+
+    @staticmethod ### LAAS: goal of this method is to get the original RGBA image from carla instead of rgb 
+    #camera_manager.np_image will have np.array of rgba instead of rgb values (its used just for simulating data generation with transparent elements) 
+    def _get_RGBA_image(weak_self, image):
+        self = weak_self()
+        if not self:
+            return
+
+        if self.sensors[self.index][0].startswith('sensor.lidar'):
+            points = np.frombuffer(image.raw_data, dtype=np.dtype('f4'))
+            points = np.reshape(points, (int(points.shape[0] / 4), 4))
+            lidar_data = np.array(points[:, :2])
+            lidar_data *= min(self.hud.dim) / (2.0 * self.lidar_range)
+            lidar_data += (0.5 * self.hud.dim[0], 0.5 * self.hud.dim[1])
+            lidar_data = np.fabs(lidar_data)  # pylint: disable=E1111
+            lidar_data = lidar_data.astype(np.int32)
+            lidar_data = np.reshape(lidar_data, (-1, 2))
+            lidar_img_size = (self.hud.dim[0], self.hud.dim[1], 3)
+            lidar_img = np.zeros((lidar_img_size), dtype=np.uint8)
+            lidar_img[tuple(lidar_data.T)] = (255, 255, 255)
+            self.surface = pygame.surfarray.make_surface(lidar_img)
+        elif self.sensors[self.index][0].startswith('sensor.camera.dvs'):
+            # Example of converting the raw_data from a carla.DVSEventArray
+            # sensor into a NumPy array and using it as an image
+            dvs_events = np.frombuffer(image.raw_data, dtype=np.dtype([
+                ('x', np.uint16), ('y', np.uint16), ('t', np.int64), ('pol', np.bool)]))
+            dvs_img = np.zeros((image.height, image.width, 3), dtype=np.uint8)
+            # Blue is positive, red is negative
+            dvs_img[dvs_events[:]['y'], dvs_events[:]['x'], dvs_events[:]['pol'] * 2] = 255
+            self.surface = pygame.surfarray.make_surface(dvs_img.swapaxes(0, 1))
+        else:
+            image.convert(self.sensors[self.index][1])
+            array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
+            array_RGBA = np.reshape(array, (image.height, image.width, 4))
+            #array = array[:, :, :3]
+            #array = array[:, :, ::-1]
+            self.np_image = array_RGBA
+            array = array_RGBA[:, :, :3]
+            array = array[:, :, ::-1]
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
 
         if self.recording:
