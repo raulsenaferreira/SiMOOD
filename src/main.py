@@ -402,8 +402,10 @@ def game_loop(args):
         # Storing images for saving as RGB images in the end of simulation
         image_queue = []
         # How much frames should be considered for safety monitoring using a temporal approach
+        
+        frame_interval = 100
         frame_counter = 0
-        frame_interval = 30
+
         array_data = []
         # SM should react or not ?
         react = False
@@ -448,11 +450,11 @@ def game_loop(args):
                             original_image = world.camera_manager.np_image #RGBA
 
                             if args.fault_type == 'novelty' or args.fault_type == 'anomaly':
-                                modified_image, rgba_modified_img = corruptions.apply_novelty(original_image, int(args.severity), frame_counter)
+                                modified_image = corruptions.apply_novelty(original_image, int(args.severity), frame_counter)
                                 modified_image = np.array(modified_image, dtype=np.float32)
 
                                 #new_surface = make_surface_rgba(modified_image.swapaxes(0, 1))
-                                new_surface = pygame.surfarray.make_surface(modified_image.swapaxes(0, 1))
+                                #new_surface = pygame.surfarray.make_surface(modified_image.swapaxes(0, 1))
                             else:
                                 modified_image = corruptions.apply_threats(original_image, args.fault_type, int(args.severity))
 
@@ -477,7 +479,7 @@ def game_loop(args):
                                 scores, boxes = detr.detect(img, object_detector, device)
                                 results = [boxes, scores, detr.CLASSES]
 
-                            real_time_view = new_surface #pygame.surfarray.make_surface(modified_image.swapaxes(0, 1))
+                            real_time_view = pygame.surfarray.make_surface(modified_image.swapaxes(0, 1))
 
                         except Exception as e:
                             with open("src/log/perception.csv", "a") as myfile:
@@ -491,10 +493,10 @@ def game_loop(args):
 
                     else:
                         original_image = world.camera_manager.np_image
+                        original_image = original_image[:, :, :3]
+                        original_image = original_image[:, :, ::-1]
+                        
                         image_queue.append(original_image)
-                        # #resizing for model input compatibility
-                        # sized = cv.resize(original_image, (640, 640))
-                        # sized = cv.cvtColor(sized, cv.COLOR_BGR2RGB)
 
                         # # perform inference with yolo or detectron
                         if args.object_detector_model == 'yolo':
