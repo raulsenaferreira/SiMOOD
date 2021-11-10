@@ -423,15 +423,17 @@ def game_loop(args):
 
             if world.camera_manager.surface is not None:
                 original_image = world.camera_manager.np_image
+                original_image = original_image[:, :, :3]
+                original_image = original_image[:, :, ::-1]
+
                 image_queue.append(original_image)
 
                 # perform inference with yolo or detectron2
-                modified_image = original_image
                 if args.object_detector_model == 'yolo':
-                    results = object_detector.predict(modified_image)
+                    results = object_detector.predict(original_image)
 
                 elif args.object_detector_model == 'detr':
-                    img = Image.fromarray((modified_image * 255).astype(np.uint8))
+                    img = Image.fromarray((original_image * 255).astype(np.uint8))
                     scores, boxes = detr.detect(img, object_detector, device)
                     results = [boxes, scores, detr.CLASSES]
                 
@@ -452,7 +454,7 @@ def game_loop(args):
             #for evaluatiion purposes
             true_pos_SUT_per_frame, true_neg_SUT_per_frame, false_pos_SUT_per_frame, false_neg_SUT_per_frame = 0, 0, 0, 0
 
-            show_bbox_screen = False
+            show_ground_truth_bbox_screen = True # True if you want to show the ground truth bboxes
             image = semantic_seg_queue[frame_num]
             frame_num+=1
             # Convert semantic segmentation image to city scapes color palette
@@ -470,7 +472,7 @@ def game_loop(args):
                 # verifying just real bounding boxes of pedestrians (e.g., ('walker' inside Carla) == ('person' inside COCO dataset))
                 if actor.type_id.startswith('walker'):
                     target_object_label = 'person'
-                    real_bbox = bbox_oracle.get_bounding_box_actor(display, actor, world.camera_manager.sensor, image, view_width, view_height, show_bbox_screen)
+                    real_bbox = bbox_oracle.get_bounding_box_actor(display, actor, world.camera_manager.sensor, image, view_width, view_height, show_ground_truth_bbox_screen)
                     
                     pygame.display.flip()
                     pygame.event.pump()
