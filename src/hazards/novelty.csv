@@ -1,0 +1,7 @@
+ML MODEL: yolo; SEVERITY: 1; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {251: 'Pedestrian 0001Pedestrian 0001Pedestrian 0001'}) 
+ML MODEL: yolo; SEVERITY: 2; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {262: 'Pedestrian 0001Pedestrian 0001Pedestrian 0001', 263: 'Pedestrian 0001Pedestrian 0001', 264: 'Pedestrian 0001Pedestrian 0001Pedestrian 0001Pedestrian 0001Pedestrian 0001'}) 
+ML MODEL: yolo; SEVERITY: 3; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {247: 'Pedestrian 0001'}) 
+ML MODEL: yolo; SEVERITY: 2; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {251: 'Pedestrian 0001'}) 
+ML MODEL: yolo; SEVERITY: 2; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {251: 'Pedestrian 0001'}) 
+ML MODEL: yolo; SEVERITY: 2; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {248: 'Pedestrian 0001Pedestrian 0001'}) 
+ML MODEL: yolo; SEVERITY: 1; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {246: 'Pedestrian 0001Pedestrian 0001Pedestrian 0001', 248: 'Pedestrian 0001', 254: 'Pedestrian 0001Pedestrian 0001Pedestrian 0001Pedestrian 0001Pedestrian 0001', 255: 'Pedestrian 0001Pedestrian 0001'}) 

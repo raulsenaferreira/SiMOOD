@@ -1,9 +1,10 @@
 import pygame
 import numpy as np
-from bounding_box_extractor import get_2d_bounding_box, get_class_from_actor_type
+from numba import jit
+from bounding_box_extractor import get_2d_bounding_box
 
 
-
+@jit(nopython=True)
 def calculate_camera_calibration(image_width, image_height, fov):
     calibration = np.identity(3)
     calibration[0, 2] = image_width / 2.0
@@ -51,6 +52,9 @@ def get_bounding_box_actor(display, actor, sensor, image, view_width, view_heigh
                 pygame.draw.rect(bb_surface, color, pygame.Rect(bbox), 3)
 
                 display.blit(bb_surface, (0, 0))
+                
+                pygame.display.flip()
+                pygame.event.pump()
 
             return bbox
 

@@ -99,7 +99,7 @@ import AEBS
 import data_utils
 import draw_utils
 import torch
-from facebook import DETR as detr
+from models.facebook import DETR as detr
 import bbox_oracle
 
 # ==============================================================================
@@ -389,7 +389,7 @@ def game_loop(args):
 
         if args.object_detector_model == 'yolo':
             # set model params
-            model_path = "yolov5/weights/yolov5s.pt" # it automatically downloads yolov5s model to given path
+            model_path = "models/yolov5/weights/yolov5s.pt" # it automatically downloads yolov5s model to given path
             device = 'cuda' if torch.cuda.is_available() else 'cpu'
             # init yolov5 model
             object_detector = YOLOv5(model_path, device)
@@ -451,7 +451,7 @@ def game_loop(args):
             pygame.event.pump()
 
             ########## oracle for the real bounding boxes of an object
-            #for evaluatiion purposes
+            #for evaluation purposes
             true_pos_SUT_per_frame, true_neg_SUT_per_frame, false_pos_SUT_per_frame, false_neg_SUT_per_frame = 0, 0, 0, 0
 
             show_ground_truth_bbox_screen = True # True if you want to show the ground truth bboxes

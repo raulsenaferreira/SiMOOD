@@ -100,7 +100,7 @@ import AEBS
 import data_utils
 import draw_utils
 import torch
-from facebook import DETR as detr
+from models.facebook import DETR as detr
 
 # ==============================================================================
 # -- Global functions ----------------------------------------------------------
@@ -415,7 +415,7 @@ def game_loop(args):
 
         if args.object_detector_model == 'yolo':
             # set model params
-            model_path = "yolov5/weights/yolov5s.pt" # it automatically downloads yolov5s model to given path
+            model_path = "models/yolov5/weights/yolov5s.pt" # it automatically downloads yolov5s model to given path
             device = 'cuda' if torch.cuda.is_available() else 'cpu'
             # init yolov5 model
             object_detector = YOLOv5(model_path, device)

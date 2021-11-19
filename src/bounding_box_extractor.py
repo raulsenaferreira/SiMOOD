@@ -1,5 +1,7 @@
 import carla
 import numpy as np
+from numba import jit
+
 
 SEMANTIC_SEG_COLOR_DEFS = {
     'pedestrian': (60, 20, 220),
@@ -192,7 +194,8 @@ def get_3d_bounding_box_camera_screen_space(bounding_box_extent, bounding_box_lo
                                             sensor_transform, camera_calibration):
     """Returns the 3d bounding box coordinates in camera screen space
     """
-    bbox_actor_space = get_3d_bounding_box_actor_space(bounding_box_extent)
+    x,y,z = bounding_box_extent.x, bounding_box_extent.y, -bounding_box_extent.z
+    bbox_actor_space = get_3d_bounding_box_actor_space(x,y,z)
 
     # 3x8 matrix, where each column is a [x,y,z] vector in space
     # x+:foward, y+:right, z+: up
@@ -270,22 +273,18 @@ def transform_3d_bounding_box_from_world_to_sensor_space(bbox_world_space, senso
 
     return bbox_sensor_space
 
-
-def carla_transform_to_matrix(transform):
-    """Creates matrix from carla transform.
-    """
-    rotation = transform.rotation
-    location = transform.location
-    c_y = np.cos(np.radians(rotation.yaw))
-    s_y = np.sin(np.radians(rotation.yaw))
-    c_r = np.cos(np.radians(rotation.roll))
-    s_r = np.sin(np.radians(rotation.roll))
-    c_p = np.cos(np.radians(rotation.pitch))
-    s_p = np.sin(np.radians(rotation.pitch))
-    matrix = np.matrix(np.identity(4))
-    matrix[0, 3] = location.x
-    matrix[1, 3] = location.y
-    matrix[2, 3] = location.z
+@jit(nopython=True)
+def calcul(matrix, yaw, roll, pitch, x, y, z):
+    c_y = np.cos(np.radians(yaw))
+    s_y = np.sin(np.radians(yaw))
+    c_r = np.cos(np.radians(roll))
+    s_r = np.sin(np.radians(roll))
+    c_p = np.cos(np.radians(pitch))
+    s_p = np.sin(np.radians(pitch))
+    
+    matrix[0, 3] = x
+    matrix[1, 3] = y
+    matrix[2, 3] = z
     matrix[0, 0] = c_p * c_y
     matrix[0, 1] = c_y * s_p * s_r - s_y * c_r
     matrix[0, 2] = -c_y * s_p * c_r - s_y * s_r
@@ -298,20 +297,30 @@ def carla_transform_to_matrix(transform):
 
     return matrix
 
+def carla_transform_to_matrix(transform):
+    """Creates matrix from carla transform.
+    """
+    rotation = transform.rotation
+    location = transform.location
+    matrix = np.matrix(np.identity(4))
 
-def get_3d_bounding_box_actor_space(bounding_box_extent):
+    return calcul(matrix, rotation.yaw, rotation.roll, rotation.pitch, location.x, location.y, location.z)
+
+
+@jit(nopython=True)
+def get_3d_bounding_box_actor_space(x,y,z):
     """Returns the 3d bounding box coordinates in actor space
     """
     cords = np.zeros((8, 4))
 
-    cords[0, :] = np.array([bounding_box_extent.x, bounding_box_extent.y, -bounding_box_extent.z, 1])  # E1
-    cords[1, :] = np.array([-bounding_box_extent.x, bounding_box_extent.y, -bounding_box_extent.z, 1])  # E2
-    cords[2, :] = np.array([-bounding_box_extent.x, -bounding_box_extent.y, -bounding_box_extent.z, 1])  # E3
-    cords[3, :] = np.array([bounding_box_extent.x, -bounding_box_extent.y, -bounding_box_extent.z, 1])  # E4
-    cords[4, :] = np.array([bounding_box_extent.x, bounding_box_extent.y, bounding_box_extent.z, 1])  # E5
-    cords[5, :] = np.array([-bounding_box_extent.x, bounding_box_extent.y, bounding_box_extent.z, 1])  # E6
-    cords[6, :] = np.array([-bounding_box_extent.x, -bounding_box_extent.y, bounding_box_extent.z, 1])  # E7
-    cords[7, :] = np.array([bounding_box_extent.x, -bounding_box_extent.y, bounding_box_extent.z, 1])  # E8
+    cords[0, :] = np.array([x, y, -z, 1])  # E1
+    cords[1, :] = np.array([-x, y, -z, 1])  # E2
+    cords[2, :] = np.array([-x, -y, -z, 1])  # E3
+    cords[3, :] = np.array([x, -y, -z, 1])  # E4
+    cords[4, :] = np.array([x, y, z, 1])  # E5
+    cords[5, :] = np.array([-x, y, z, 1])  # E6
+    cords[6, :] = np.array([-x, -y, z, 1])  # E7
+    cords[7, :] = np.array([x, -y, z, 1])  # E8
 
     return cords
 

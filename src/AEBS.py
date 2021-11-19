@@ -1,5 +1,4 @@
 import safe_regions
-from shapely.geometry import LineString
 from shapely.geometry import Polygon
 import pygame
 from typing import *
@@ -25,20 +24,6 @@ def draw_safety_margin(pygame, surface, color, lines, thickness):
     ## left, top, width, height
     rect = pygame.draw.polygon(surface, color, lines, thickness)
     return rect
-
-
-def bbox_conversion(box, width, height):
-    # normalizing data    
-    box[0] *=width
-    box[1] *= height
-    box[2] *= width
-    box[3] *= height
-
-    # correcting bounding box offset related to the center of the image
-    box[0] = box[0] - box[2]/2
-    box[1] = box[1] - box[3]/2
-
-    return [int(box[0]), int(box[1]), int(box[2]), int(box[3])]
 
 
 def is_rect_overlap(bbox,R2):
@@ -112,7 +97,7 @@ def emergency_braking(world,
                     if len(colhist) > 0:
                         # save info about the frame and the params that led to the hazard
                         with open("src/hazards/{0}.csv".format(str(args.fault_type)), "a") as myfile:
-                            myfile.write(('ML MODEL: {}; SEVERITY: {}; DAY_TIME: {}; DETAILS: {} \n').format(str(args.object_detector_model), str(args.severity), str(args.time_of_day), str(colhist)))
+                            myfile.write(('ML MODEL: {}; SEVERITY: {}; DAY_TIME: {}; DETAILS: {} \n').format(str(args.object_detector_model_type), str(args.severity), str(args.time_of_day), str(colhist)))
 
                         #terminates the program if there is a hazard
                         quit()

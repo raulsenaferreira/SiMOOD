@@ -1,2 +1,4 @@
 SEVERITY: 4; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {275: 'Pedestrian 0001Pedestrian 0001Pedestrian 0001Pedestrian 0001'}) 
 SEVERITY: 5; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {249: 'Pedestrian 0001'}) 
+ML MODEL: yolo; SEVERITY: 2; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {247: 'Pedestrian 0001'}) 
+ML MODEL: yolo; SEVERITY: 3; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {250: 'Pedestrian 0001Pedestrian 0001Pedestrian 0001', 257: 'Pedestrian 0001Pedestrian 0001', 258: 'Pedestrian 0001Pedestrian 0001Pedestrian 0001Pedestrian 0001Pedestrian 0001', 259: 'Pedestrian 0001Pedestrian 0001Pedestrian 0001Pedestrian 0001', 260: 'Pedestrian 0001'}) 

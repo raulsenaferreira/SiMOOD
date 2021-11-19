@@ -1,11 +1,12 @@
-from shapely.geometry import LineString
 from shapely.geometry import Polygon
 import pygame
 from typing import *
 import numpy as np
 import safe_regions
+from numba import jit
 
 
+@jit(nopython=True)
 def get_distance_by_camera(bbox):
     ## Distance Measurement for each bounding box
     x, y, w, h = bbox[0], bbox[1], bbox[2], bbox[3]
@@ -26,7 +27,7 @@ def draw_safety_margin(pygame, surface, color, lines, thickness):
     rect = pygame.draw.polygon(surface, color, lines, thickness)
     return rect
 
-
+@jit(nopython=True)
 def bbox_conversion(box, width, height):
     # normalizing data    
     box[0] *=width
@@ -57,14 +58,14 @@ def draw_bboxes(world,
     categories = None
 
     # parse results
-    if args.object_detector_model == 'yolo':
+    if args.object_detector_model_type == 'yolo':
         #predictions = results.pred[0]
         predictions = results.xywhn[0] #xywh normalized
         bboxes = predictions[:, :4] # x1, x2, y1, y2
         scores = predictions[:, 4]
         categories = predictions[:, 5]
 
-    elif args.object_detector_model == 'detr':
+    elif args.object_detector_model_type == 'detr':
         bboxes = results[0]
         scores = results[1]
         categories = results[2]
@@ -103,13 +104,13 @@ def draw_bboxes(world,
     
     for tensor_bbox, score, category in zip(bboxes, scores, categories):
 
-        if args.object_detector_model == 'yolo':
+        if args.object_detector_model_type == 'yolo':
             label = results.names[int(category.item())]
-        elif args.object_detector_model == 'detr':
+        elif args.object_detector_model_type == 'detr':
             label = categories[score.argmax()]
         
         bbox = tensor_bbox.cpu().numpy()
-        if args.object_detector_model == 'detr':
+        if args.object_detector_model_type == 'detr':
             bbox = bbox.astype(dtype=np.int16, copy=False)
 
         np.random.seed(hash(label) % (2 ** 32 - 1))
@@ -117,7 +118,7 @@ def draw_bboxes(world,
 
         #print('{} detected \n bounding box {} \n score {} \n'.format(label, bbox, score[score.argmax()]))
 
-        if args.object_detector_model == 'yolo':
+        if args.object_detector_model_type == 'yolo':
             # converting yolov5 bbox to acceptable format for pygame rect
             bbox = bbox_conversion(bbox, view_width, view_height)
 
