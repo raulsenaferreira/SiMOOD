@@ -59,8 +59,9 @@ def draw_bboxes(world,
 
     # parse results
     if args.object_detector_model_type == 'yolo':
-        #predictions = results.pred[0]
+        
         predictions = results.xywhn[0] #xywh normalized
+
         bboxes = predictions[:, :4] # x1, x2, y1, y2
         scores = predictions[:, 4]
         categories = predictions[:, 5]

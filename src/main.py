@@ -2,80 +2,11 @@
 
 # Copyright (c) 2019 Computer Vision Center (CVC) at the Universitat Autonoma de
 # Barcelona (UAB).
-#
-# This work is licensed under the terms of the MIT license.
-# For a copy, see <https://opensource.org/licenses/MIT>.
-
-# Allows controlling a vehicle with a keyboard. For a simpler and more
-# documented example, please take a look at tutorial.py.
-
-"""
-Welcome to CARLA manual control.
-
-Use ARROWS or WASD keys for control.
-
-    W            : throttle
-    S            : brake
-    A/D          : steer left/right
-    Q            : toggle reverse
-    Space        : hand-brake
-    P            : toggle autopilot
-    M            : toggle manual transmission
-    ,/.          : gear up/down
-
-    L            : toggle next light type
-    SHIFT + L    : toggle high beam
-    Z/X          : toggle right/left blinker
-    I            : toggle interior light
-
-    TAB          : change sensor position
-    ` or N       : next sensor
-    [1-9]        : change to sensor [1-9]
-    G            : toggle radar visualization
-    C            : change weather (Shift+C reverse)
-
-    R            : toggle recording images to disk
-
-    CTRL + R     : toggle recording of simulation (replacing any previous)
-    CTRL + P     : start replaying last recorded simulation
-    CTRL + +     : increments the start time of the replay by 1 second (+SHIFT = 10 seconds)
-    CTRL + -     : decrements the start time of the replay by 1 second (+SHIFT = 10 seconds)
-
-    F1           : toggle HUD
-    H/?          : toggle help
-    ESC          : quit
-"""
 
 from __future__ import print_function
-
-# ==============================================================================
-# -- find carla module ---------------------------------------------------------
-# ==============================================================================
-
-
-import glob
-import os
-import sys
-
-try:
-    #sys.path.append(glob.glob('/opt/carla-simulator/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
-    sys.path.append(glob.glob('../carla/dist/carla-0.9.11-py3.7-linux-x86_64.egg')[0])
-except IndexError:
-    print("IndexError")
-    pass
-
-
-# ==============================================================================
-# -- imports -------------------------------------------------------------------
-# ==============================================================================
-
-
-import carla
-
-from original_manual_control import (World, HUD, KeyboardControl, CameraManager,
-                                     CollisionSensor, LaneInvasionSensor, GnssSensor, IMUSensor)
-from bounding_box_extractor import get_2d_bounding_box, get_class_from_actor_type
-
+from original_manual_control import (World, HUD, KeyboardControl, CameraManager, CollisionSensor, LaneInvasionSensor, GnssSensor, IMUSensor)
+from typing import *
+from multiprocessing.connection import Client
 import logging
 import time
 import pygame
@@ -85,118 +16,30 @@ import subprocess
 import signal
 import h5py
 import numpy as np
-from typing import *
-from multiprocessing.connection import Client
 import datetime
 import shutil
-
-import corruptions
-from PIL import Image
+import glob
+import os
+import sys
 import cv2 as cv
-
+# ================================ custom ==============================================
+from bounding_box_extractor import get_2d_bounding_box, get_class_from_actor_type
 from safety_monitors import baseline_safety_monitors as SM_base
-from yolov5 import YOLOv5
+import corruptions
 import AEBS
 import data_utils
 import draw_utils
-import torch
-from models.facebook import DETR as detr
+import ML_functions
+import evaluation_module
 
 # ==============================================================================
 # -- Global functions ----------------------------------------------------------
 # ==============================================================================
 
-
-def get_actor_display_name(actor, truncate=250):
-    name = ' '.join(actor.type_id.replace('_', '.').title().split('.')[1:])
-    return (name[:truncate - 1] + u'\u2026') if len(name) > truncate else name
-
-
 SCENARIO_PROCESS = None
-
-ego_vehicle = None
-
-# ==============================================================================
-# -- World ---------------------------------------------------------------------
-# ==============================================================================
-
-class WorldSR(World):
-
-    restarted = False
-
-    def restart(self):
-
-        if self.restarted:
-            return
-        self.restarted = True
-
-        self.player_max_speed = 1.589
-        self.player_max_speed_fast = 3.713
-
-        # Keep same camera config if the camera manager exists.
-        cam_index = self.camera_manager.index if self.camera_manager is not None else 0
-        cam_pos_index = self.camera_manager.transform_index if self.camera_manager is not None else 0
-
-        # Get the ego vehicle
-        while self.player is None:
-            print("Waiting for the ego vehicle...")
-            time.sleep(1)
-            possible_vehicles = self.world.get_actors().filter('vehicle.*')
-            for vehicle in possible_vehicles:
-                if vehicle.attributes['role_name'] == "hero":
-                    print("Ego vehicle found")
-                    self.player = vehicle
-                    
-                    ego_vehicle = self.player
-                    break
-        
-        self.player_name = self.player.type_id
-
-        # Set up the sensors.
-        self.collision_sensor = CollisionSensor(self.player, self.hud)
-        self.lane_invasion_sensor = LaneInvasionSensor(self.player, self.hud)
-        self.gnss_sensor = GnssSensor(self.player)
-        self.imu_sensor = IMUSensor(self.player)
-        self.camera_manager = CameraManager(self.player, self.hud, self._gamma)
-        self.camera_manager.transform_index = cam_pos_index
-        self.camera_manager.set_sensor(cam_index, notify=False)
-        actor_type = get_actor_display_name(self.player)
-        self.hud.notification(actor_type)
-
-    
-    def modify_vehicle_physics(self, vehicle):
-        physics_control = vehicle.get_physics_control()
-        physics_control.use_sweep_wheel_collision = True
-        vehicle.apply_physics_control(physics_control)
-
-
-    def tick(self, clock):
-        if len(self.world.get_actors().filter(self.player_name)) < 1:
-            return False
-
-        self.hud.tick(self, clock)
-        return True
-
-    def destroy(self):
-        if self.radar_sensor is not None:
-            self.toggle_radar()
-        sensors = [
-            self.camera_manager.sensor,
-            self.collision_sensor.sensor,
-            self.lane_invasion_sensor.sensor,
-            self.gnss_sensor.sensor,
-            self.imu_sensor.sensor]
-        for sensor in sensors:
-            if sensor is not None:
-                sensor.stop()
-                sensor.destroy()
-        if self.player is not None:
-            self.player.destroy()
-
-# ==============================================================================
-# -- game_loop() ---------------------------------------------------------------
-# ==============================================================================
-
+LOG_PERCEPTION_PATH = "src/log/perception.csv"
+LOG_PERCEPTION_TXT = 'Exception during object image transformation for {} using {}: {} \n'
+CARLA_EGG_PATH = '../carla/dist/carla-0.9.11-py3.7-linux-x86_64.egg'
 
 def setup_weather(world, args):
     weather = world.get_weather()
@@ -269,31 +112,109 @@ def calculate_camera_calibration(image_width, image_height, fov):
     return calibration
 
 
+def get_actor_display_name(actor, truncate=250):
+    name = ' '.join(actor.type_id.replace('_', '.').title().split('.')[1:])
+    return (name[:truncate - 1] + u'\u2026') if len(name) > truncate else name
 
-import pygame.pixelcopy
 
-def make_surface_rgba(array):
-    """Returns a surface made from a [w, h, 4] numpy array with per-pixel alpha
+def numpy_rgba2rgb(array):
     """
-    shape = array.shape
-    if len(shape) != 3 and shape[2] != 4:
-        raise ValueError("Array not RGBA")
+    Receives a numpy array [w, h, 4] pixel (alpha)
+    Returns a numpy array [w, h, 3] without alpha
+    """
+    array = array[:, :, :3]
+    array = array[:, :, ::-1]
 
-    # Create a surface the same width and height as array and with
-    # per-pixel alpha.
-    surface = pygame.Surface(shape[0:2], pygame.SRCALPHA, 32)
+    return array
 
-    # Copy the rgb part of array to the new surface.
-    pygame.pixelcopy.array_to_surface(surface, array[:,:,0:3])
+# ==============================================================================
+# -- World ---------------------------------------------------------------------
+# ==============================================================================
 
-    # Copy the alpha part of array to the surface using a pixels-alpha
-    # view of the surface.
-    surface_alpha = np.array(surface.get_view('A'), copy=False)
-    surface_alpha[:,:] = array[:,:,3]
+# -- find carla module 
+try:
+    #sys.path.append(glob.glob('/opt/carla-simulator/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
+    sys.path.append(glob.glob(CARLA_EGG_PATH)[0])
+except IndexError:
+    print("IndexError")
+    pass
 
-    return surface
+import carla
+
+class WorldSR(World):
+
+    restarted = False
+
+    def restart(self):
+
+        if self.restarted:
+            return
+        self.restarted = True
+
+        self.player_max_speed = 1.589
+        self.player_max_speed_fast = 3.713
+
+        # Keep same camera config if the camera manager exists.
+        cam_index = self.camera_manager.index if self.camera_manager is not None else 0
+        cam_pos_index = self.camera_manager.transform_index if self.camera_manager is not None else 0
+
+        # Get the ego vehicle
+        while self.player is None:
+            print("Waiting for the ego vehicle...")
+            time.sleep(1)
+            possible_vehicles = self.world.get_actors().filter('vehicle.*')
+            for vehicle in possible_vehicles:
+                if vehicle.attributes['role_name'] == "hero":
+                    print("Ego vehicle found")
+                    self.player = vehicle
+                    break
+        
+        self.player_name = self.player.type_id
+
+        # Set up the sensors.
+        self.collision_sensor = CollisionSensor(self.player, self.hud)
+        self.lane_invasion_sensor = LaneInvasionSensor(self.player, self.hud)
+        self.gnss_sensor = GnssSensor(self.player)
+        self.imu_sensor = IMUSensor(self.player)
+        self.camera_manager = CameraManager(self.player, self.hud, self._gamma)
+        self.camera_manager.transform_index = cam_pos_index
+        self.camera_manager.set_sensor(cam_index, notify=False)
+        actor_type = get_actor_display_name(self.player)
+        self.hud.notification(actor_type)
+
+    
+    def modify_vehicle_physics(self, vehicle):
+        physics_control = vehicle.get_physics_control()
+        physics_control.use_sweep_wheel_collision = True
+        vehicle.apply_physics_control(physics_control)
 
 
+    def tick(self, clock):
+        if len(self.world.get_actors().filter(self.player_name)) < 1:
+            return False
+
+        self.hud.tick(self, clock)
+        return True
+
+    def destroy(self):
+        if self.radar_sensor is not None:
+            self.toggle_radar()
+        sensors = [
+            self.camera_manager.sensor,
+            self.collision_sensor.sensor,
+            self.lane_invasion_sensor.sensor,
+            self.gnss_sensor.sensor,
+            self.imu_sensor.sensor]
+        for sensor in sensors:
+            if sensor is not None:
+                sensor.stop()
+                sensor.destroy()
+        if self.player is not None:
+            self.player.destroy()
+
+# ==============================================================================
+# -- game_loop() ---------------------------------------------------------------
+# ==============================================================================
 
 def game_loop(args):
     pygame.init()
@@ -371,64 +292,52 @@ def game_loop(args):
                                                      carla.Transform(carla.Location(x=0, y=0, z=0)),
                                                      attach_to=world.camera_manager.sensor,
                                                      attachment_type=carla.AttachmentType.Rigid)
+        #if not args.no_recording:
+        # IKS: Store event camera data
+        if 'event_camera' in args.sensors:
+            events_queue = []
+            def save_dvs(events: carla.libcarla.DVSEventArray):
+                # Save the raw events
+                events_queue.append(events)
 
-        if not args.no_recording:
-            # IKS: Store event camera data
-            if 'event_camera' in args.sensors:
-                events_queue = []
-                def save_dvs(events: carla.libcarla.DVSEventArray):
-                    # Save the raw events
-                    events_queue.append(events)
+            world.dvs.listen(lambda events: save_dvs(events))
 
-                world.dvs.listen(lambda events: save_dvs(events))
+        # # IKS: Store semantic segmentation data
+        semantic_seg_queue = []
+        def save_semantic_seg_camera(image: carla.libcarla.Image):
+            semantic_seg_queue.append(image)
 
-            # # IKS: Store semantic segmentation data
-            semantic_seg_queue = []
-            def save_semantic_seg_camera(image: carla.libcarla.Image):
-                semantic_seg_queue.append(image)
+        world.semantic_seg.listen(lambda image: save_semantic_seg_camera(image))
 
-            world.semantic_seg.listen(lambda image: save_semantic_seg_camera(image))
+        # IKS: Store rgb camera data
+        image_queue = []
+        #def save_rgb_camera(image: carla.libcarla.Image):
+        #    image_queue.append(image)
 
-            # IKS: Store rgb camera data
-            image_queue = []
-            #def save_rgb_camera(image: carla.libcarla.Image):
-            #    image_queue.append(image)
+        #world.camera_manager.injected_listener = save_rgb_camera
 
-            #world.camera_manager.injected_listener = save_rgb_camera
-
-            # IKS: Store actor states
-            world_state_queue = []
+        # IKS: Store actor states
+        world_state_queue = []
 
         # Storing images for saving as RGB images in the end of simulation
         image_queue = []
         # How much frames should be considered for safety monitoring using a temporal approach
-        
-        frame_interval = 100
-        frame_counter = 0
+        frame_interval = 1
+        frame_num = 0
 
         array_data = []
-        # SM should react or not ?
-        react = False
-        #obj detector model
-        object_detector = None
-        LOCK = False
+        
+        WARNING_AREA = None
 
-        if args.object_detector_model == 'yolo':
-            # set model params
-            model_path = "models/yolov5/weights/yolov5s.pt" # it automatically downloads yolov5s model to given path
-            device = 'cuda' if torch.cuda.is_available() else 'cpu'
-            # init yolov5 model
-            object_detector = YOLOv5(model_path, device)
-        elif args.object_detector_model == 'detr':
-            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        #loading obj detector model
+        ml_model = ML_functions.ML_object(args.object_detector_model_type, args.use_expert_model, args.fault_type)
+        ml_model.load_model()
 
-            object_detector = torch.hub.load('facebookresearch/detr:main', 'detr_resnet50', pretrained=True)
-            #object_detector = torch.hub.load('facebookresearch/detr:main', 'detr_resnet50_dc5', pretrained=True)
-            #object_detector = torch.hub.load('facebookresearch/detr:main', 'detr_resnet101', pretrained=True)
-            #object_detector = torch.hub.load('facebookresearch/detr:main', 'detr_resnet101_dc5', pretrained=True)
-            object_detector = object_detector.to(device)
-            object_detector.eval();
-
+        #for evaluation purposes
+        true_pos_SUT, true_neg_SUT, false_pos_SUT, false_neg_SUT = [], [], [], []
+        show_ground_truth_bbox_screen = False # True if you want to show the ground truth bboxes
+        
+        ################################################## stream looping ##################################################
         while True:
             world.world.tick()
             clock.tick_busy_loop()
@@ -437,136 +346,115 @@ def game_loop(args):
             #     return
 
             world.render(display)
+                
+            if world.camera_manager.surface is not None:
+                true_pos_SUT_per_frame, true_neg_SUT_per_frame, false_pos_SUT_per_frame, false_neg_SUT_per_frame = 0, 0, 0, 0
+                incoming_image = world.camera_manager.np_image #RGBA
+                frame_num += 1
 
-            # Detect objects in image and draw the resulting bounding boxes
-            if args.integrate_object_detector:
-                if world.camera_manager.surface is not None:
-                    results = None
-                    if args.fault_type != 'none':
-                        
-                        try:
-                            frame_counter += 1
-                            ### Modifying the scenario on the fly with some corruptions
-                            original_image = world.camera_manager.np_image #RGBA
+                ########################################## THREATS on the fly ###########################################
+                if args.fault_type != 'none':                                                                           #
+                    if args.fault_type == 'novelty' or args.fault_type == 'anomaly':                                    #
+                        incoming_image = corruptions.apply_novelty(incoming_image, int(args.severity), frame_num)       #
+                        incoming_image = np.array(incoming_image, dtype=np.float32)                                     #
+                    else:                                                                                               #
+                        incoming_image = corruptions.apply_threats(incoming_image, args.fault_type, int(args.severity)) #
+                else:                                                                                                   #
+                    incoming_image = numpy_rgba2rgb(world.camera_manager.np_image)                                      #
+                ########################################## THREATS on the fly ###########################################
+                
+                image_queue.append(incoming_image)
 
-                            if args.fault_type == 'novelty' or args.fault_type == 'anomaly':
-                                modified_image = corruptions.apply_novelty(original_image, int(args.severity), frame_counter)
-                                modified_image = np.array(modified_image, dtype=np.float32)
+                # rendering the image
+                real_time_view = pygame.surfarray.make_surface(incoming_image.swapaxes(0, 1))
+                world.camera_manager.surface = real_time_view
+                #display.blit(real_time_view, (0, 0))
+                
+                ########################################## Safety Monitor ###################################
+                # VERIFY THE INPUTS: image conditions and correct the image if necessary                    #
+                SM = SM_base.Safety_monitor(incoming_image, verification='pre')                             #
+                incoming_image, has_reacted = SM.run()                                                      #
+                ########################################## Safety Monitor ###################################
 
-                                #new_surface = make_surface_rgba(modified_image.swapaxes(0, 1))
-                                #new_surface = pygame.surfarray.make_surface(modified_image.swapaxes(0, 1))
-                            else:
-                                modified_image = corruptions.apply_threats(original_image, args.fault_type, int(args.severity))
+                #incoming_image = cv.cvtColor(incoming_image, cv.COLOR_BGR2RGB)
+                
+                ########################################## ML model #########################################
+                predictions = None                                                                          #
+                try:                                                                                        #
+                    predictions = ml_model.make_predictions(incoming_image)                                 #
+                                                                                                            #
+                except Exception as e:                                                                      #
+                    with open(LOG_PERCEPTION_PATH, "a") as myfile:                                          #
+                        myfile.write(LOG_PERCEPTION_TXT.format(str(args.fault_type),                        #
+                            str(args.object_detector_model_type), str(e)))                                  #
+                ########################################## ML model #########################################
 
-                            image_queue.append(modified_image)
+                view_width, view_height = int(args.res.split('x')[0]), int(args.res.split('x')[1])
 
-                            #################################
-                            # initialize the safety monitor object
-                            # verify image conditions and correct the image if necessary
-                            SM = SM_base.Safety_monitor(modified_image, verification='pre')
-                            modified_image, has_reacted = SM.run()
-                            #print('has_reacted:', has_reacted)
-                            #################################
-
-                            #modified_image = cv.cvtColor(modified_image, cv.COLOR_BGR2RGB)
-
-                            # # perform inference with yolo or detectron2
-                            if args.object_detector_model == 'yolo':
-                                results = object_detector.predict(modified_image)
-
-                            elif args.object_detector_model == 'detr':
-                                img = Image.fromarray((modified_image * 255).astype(np.uint8))
-                                scores, boxes = detr.detect(img, object_detector, device)
-                                results = [boxes, scores, detr.CLASSES]
-
-                            real_time_view = pygame.surfarray.make_surface(modified_image.swapaxes(0, 1))
-
-                        except Exception as e:
-                            with open("src/log/perception.csv", "a") as myfile:
-                                myfile.write('Exception during object image transformation for {} using {}: {} \n'.format(str(args.fault_type), str(args.object_detector_model), str(e)))
-
-                            #real_time_view = make_surface_rgba(world.camera_manager.np_image.swapaxes(0, 1))
-                            original_image = original_image[:, :, :3]
-                            original_image = original_image[:, :, ::-1]
-                            
-                            real_time_view = pygame.surfarray.make_surface(original_image.swapaxes(0, 1))
-
-                    else:
-                        original_image = world.camera_manager.np_image
-                        original_image = original_image[:, :, :3]
-                        original_image = original_image[:, :, ::-1]
-                        
-                        image_queue.append(original_image)
-
-                        # # perform inference with yolo or detectron
-                        if args.object_detector_model == 'yolo':
-                            # results = object_detector.predict(sized, size=640)
-                            results = object_detector.predict(original_image)
-                            
-                        elif args.object_detector_model == 'detr':
-                            img = Image.fromarray((original_image * 255).astype(np.uint8))
-                            scores, boxes = detr.detect(img, object_detector, device)
-                            results = [boxes, scores, detr.CLASSES]
-
-                        real_time_view = pygame.surfarray.make_surface(original_image.swapaxes(0, 1))
-
-                    world.camera_manager.surface = real_time_view
-                    #display.blit(real_time_view, (0, 0))
-
-                    if results is not None:
-                        #frame_counter += 1
-                        view_width, view_height = int(args.res.split('x')[0]), int(args.res.split('x')[1])
-                        #drawing boxes from predictions. Variable detected_objects is an array of bboxes (already converted in a good format to be used 
-                        # in pygame operations), scores, and labels 
-                        detected_objects_per_frame, safety_surface, WARNING_AREA, DANGER_AREA = draw_utils.draw_bboxes(
-                            world, carla, world.camera_manager, display, view_width, view_height, results, args)
-                        
-                        array_data.append(detected_objects_per_frame)
-                        
-                        if frame_counter == frame_interval:
-                            frame_counter = 0
-
-                            #################################
-                            # temporal monitoring (monitors the coherence of the ML predictions)
-                            dummy_surface = pygame.Surface((view_width, view_height)) #just for polygon calculation purposes
-                            SM = SM_base.Safety_monitor((array_data, dummy_surface), verification='post')
-                            array_data, has_reacted = SM.run() 
-                            
-                            #print('has_reacted:', has_reacted)
-                            #################################
-
-                            ########## main functionality is also applied in a small set of frames. To apply frame by frame just change "frame_interval=1"
-                            AEBS_activated = AEBS.emergency_braking(world, carla, display, safety_surface, WARNING_AREA, DANGER_AREA, array_data, args)
-                            ########## main functionality
-
-                            array_data = [] 
-
-                        #################################
-                        # initialize the safety monitor object
-                        # verifying threats after the perception system decision
-
-                        # #we perform a monitoring according to a specific object
-                        # target_class = 'person' 
-                        # # array_data_per_frame it's an array of objects representing the target class
-                        # array_data_per_frame = data_utils.compose_data(results, args, array_data, target_class, view_width, view_height)
-
-                        # if len(array_data_per_frame) > 0:
-                        #     array_data.append(array_data_per_frame)
-
-                        # # temporal monitoring functions (monitors the functionality)
-                        # if frame_counter == frame_interval:
-                        #     frame_counter = 0
-                        #     if len(array_data) > 0 and AEBS_activated==False and LOCK==False:
-                        #         dummy_surface = pygame.Surface((view_width, view_height)) #just for polygon calculation purposes
-                        #         SM = SM_base.Safety_monitor((array_data, dummy_surface), verification='post')
-                        #         _, has_reacted = SM.run() 
-                                
-                        #         array_data = []
-                        #     elif AEBS_activated:
-                        #         LOCK = AEBS_activated
-                        #print('has_reacted:', has_reacted)
-                        #################################
+                # drawing boxes from predictions. Variable detected_objects is an array of bboxes ...
+                # (already converted in a good format to be used in pygame functions), scores, and labels 
+                if predictions is not None:
+                    detected_objects_per_frame, safety_surface, WARNING_AREA, DANGER_AREA = draw_utils.draw_bboxes(
+                        world, carla, world.camera_manager, display, view_width, view_height, predictions, args)
                     
+                    array_data.append(detected_objects_per_frame) # to be used in temporal functions
+
+                if frame_num == frame_interval:
+                    frame_num = 0
+                    ########################################## Safety Monitor #######################################
+                    # VERIFY THE OUTPUTS: image conditions and correct the image if necessary                       #
+                    # temporal monitoring (monitors the coherence of the ML predictions)                            #
+                    dummy_surface = pygame.Surface((view_width, view_height)) #just for polygon calculation purposes#
+                    SM = SM_base.Safety_monitor((array_data, dummy_surface), verification='post')                   #
+                    array_data, has_reacted = SM.run()                                                              #
+                    ########################################## Safety Monitor #######################################
+                    array_data = []
+
+                if predictions is not None:
+                    ################################################## EMERGENCY BRAKING SYSTEM ################################################################
+                    AEBS_activated = AEBS.emergency_braking(world, carla, display, safety_surface, WARNING_AREA, DANGER_AREA, detected_objects_per_frame, args) #
+                    ################################################## EMERGENCY BREAKING SYSTEM ################################################################
+
+                    #################################
+                    # initialize the safety monitor object
+                    # verifying threats after the perception system decision
+
+                    # #we perform a monitoring according to a specific object
+                    # target_class = 'person' 
+                    # # array_data_per_frame it's an array of objects representing the target class
+                    # array_data_per_frame = data_utils.compose_data(predictions, args, array_data, target_class, view_width, view_height)
+
+                    # if len(array_data_per_frame) > 0:
+                    #     array_data.append(array_data_per_frame)
+
+                    # # temporal monitoring functions (monitors the functionality)
+                    # if frame_num == frame_interval:
+                    #     frame_num = 0
+                    #     if len(array_data) > 0 and AEBS_activated==False and LOCK==False:
+                    #         dummy_surface = pygame.Surface((view_width, view_height)) #just for polygon calculation purposes
+                    #         SM = SM_base.Safety_monitor((array_data, dummy_surface), verification='post')
+                    #         _, has_reacted = SM.run() 
+                            
+                    #         array_data = []
+                    #     elif AEBS_activated:
+                    #         LOCK = AEBS_activated
+                    #print('has_reacted:', has_reacted)
+                    #################################
+
+                    ############################### SUT evaluation ###############################
+                    
+                    image = semantic_seg_queue[frame_num]
+                    # Convert semantic segmentation image to city scapes color palette
+                    image.convert(carla.ColorConverter.CityScapesPalette)
+
+                    true_pos_SUT_per_frame, true_neg_SUT_per_frame, false_pos_SUT_per_frame, false_neg_SUT_per_frame = evaluation_module.evaluate(world, display, image, 
+                        detected_objects_per_frame, view_width, view_height, show_ground_truth_bbox_screen, WARNING_AREA)
+
+                true_pos_SUT.append(true_pos_SUT_per_frame)
+                true_neg_SUT.append(true_neg_SUT_per_frame)
+                false_pos_SUT.append(false_pos_SUT_per_frame)
+                false_neg_SUT.append(false_neg_SUT_per_frame)
+                ############################### SUT evaluation ###############################
 
             pygame.display.flip()
             pygame.event.pump()
@@ -736,8 +624,13 @@ def game_loop(args):
                             json.dump(coco, coco_file, indent=2)
 
                 return
-
+    except Exception as e:
+        print('Error during executing the simulation:', e)
     finally:
+        print("Final results...")
+        print("true_pos_SUT: {} \ntrue_neg_SUT: {} \nfalse_pos_SUT: {} \nfalse_neg_SUT: {}".format(
+            np.sum(true_pos_SUT), np.sum(true_neg_SUT), np.sum(false_pos_SUT), np.sum(false_neg_SUT)))
+
         if world is not None:
             world.destroy()
 
@@ -746,7 +639,7 @@ def game_loop(args):
             os.kill(SCENARIO_PROCESS.pid, signal.SIGKILL)
         except:
             pass
-
+        
         pygame.quit()
 
 
@@ -847,17 +740,15 @@ def main():
                            action='store_true',
                            help='Specify this flag if the sensor data should not be recorded')
 
-    argparser.add_argument('--integrate-object-detector',
+    argparser.add_argument('--use_expert_model', #it works just with YOLO for the moment
                            action='store_true',
-                           help='Specify this flag if bounding boxes should be visualised using an object detector'
-                                'connected via IPC. For the integration, refer to this repository:'
-                                'https://gitlab.cc-asp.fraunhofer.de/carla/experimental/carla-object-detection-integration-yolov4/-/blob/master/carla_client_object_detection.py')
+                           help='Specify this flag if you want ot use an object detector that was trained in a data corrupted with the same type of threat')
     
-    argparser.add_argument('--object_detector_model', #it works when the argument --integrate-object-detector is activated too
+    argparser.add_argument('--object_detector_model_type', 
                            type=str,
                            default='yolo',
                            choices=['yolo', 'detr'],
-                           help='object detector model')
+                           help='object detector model type')
 
     argparser.add_argument('--no_intervention',
                            action='store_true',
@@ -868,7 +759,7 @@ def main():
                            default='none',
                            choices=['brightness', 'contrast', 'sun_flare', 'rain', 'snow', 'fog', 'smoke', 'pixel_trap', 'row_add_logic', 'shifted_pixel', 'channel_shuffle', 
                            'channel_dropout', 'coarse_dropout', 'grid_dropout', 'spatter', 'gaussian_noise', 'shot_noise', 'speckle_noise', 'defocus_blur', 'elastic_transform', 
-                           'impulse_noise', 'gaussian_blur', 'pixelate', 'ice', 'broken_lens', 'dirty', 'condensation', 'novelty', 'anomaly'],
+                           'impulse_noise', 'gaussian_blur', 'pixelate', 'ice', 'broken_lens', 'dirty', 'condensation', 'novelty', 'anomaly', 'heavy_smoke'],
                            help='25 transformations from four types of OOD categories: novelty class, anomalies, distributional shift, and noise.')
 
     argparser.add_argument('--severity',

@@ -51,19 +51,21 @@ def evaluate(world, display, image, detected_objects_per_frame, view_width, view
                     else:
 
                         for det_object in detected_objects_per_frame:
-                            predicted_bbox = det_object[0]
-                            predicted_class = det_object[2]
+                            if det_object is not None:
+                                #print('det_object', len(det_object))
+                                predicted_bbox = det_object[0]
+                                predicted_class = det_object[2]
 
-                            # search for a predicted pedestrian that entered in the important region (when actually there is no real pedestrian on that region)
-                            if is_rect_overlap(important_region, predicted_bbox):
+                                # search for a predicted pedestrian that entered in the important region (when actually there is no real pedestrian on that region)
+                                if is_rect_overlap(important_region, predicted_bbox):
 
-                                #there is NO real pedestrian and the ML detected it anyway (false positive)
-                                if target_object_label == predicted_class: 
-                                    false_pos_SUT_per_frame+=1
+                                    #there is NO real pedestrian and the ML detected it anyway (false positive)
+                                    if target_object_label == predicted_class: 
+                                        false_pos_SUT_per_frame+=1
 
-                            #there is NO real pedestrian in the important region and the ML correctly did not detected anything (true negative)
-                            else: 
-                                true_neg_SUT_per_frame+=1
+                                #there is NO real pedestrian in the important region and the ML correctly did not detected anything (true negative)
+                                else: 
+                                    true_neg_SUT_per_frame+=1
 
             #################### ending evaluating the predicted bbox regarding the real bbox ####################
 

@@ -3,3 +3,6 @@ ML MODEL: yolo; SEVERITY: 2; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, 
 ML MODEL: yolo; SEVERITY: 2; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {245: 'Pedestrian 0001Pedestrian 0001Pedestrian 0001', 247: 'Pedestrian 0001', 253: 'Pedestrian 0001Pedestrian 0001', 254: 'Pedestrian 0001'}) 
 ML MODEL: yolo; SEVERITY: 2; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {246: 'Pedestrian 0001'}) 
 ML MODEL: yolo; SEVERITY: 2; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {249: 'Pedestrian 0001'}) 
+ML MODEL: yolo; SEVERITY: 2; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {256: 'Pedestrian 0001'}) 
+ML MODEL: yolo; SEVERITY: 2; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {252: 'Pedestrian 0001Pedestrian 0001'}) 
+ML MODEL: yolo; SEVERITY: 2; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {260: 'Pedestrian 0001'}) 

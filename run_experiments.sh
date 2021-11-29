@@ -12,9 +12,10 @@ SCENARIO_PATH='src/pedestrian_crossing_between_cars0/scenario.xosc'
 # PARAMS
 day_times=('day')
 # 'sunset' 'night'
-threats=('novelty')
+threats=('heavy_smoke')
 #'pixelate' 'dirty' 'broken_lens'
 #'condensation' 'ice' 'smoke' 'brightness' 'contrast' 'snow' 'sun_flare' 'gaussian_noise' 'rain' 'gaussian_blur' 'grid_dropout' 'coarse_dropout' 'channel_dropout' 'channel_shuffle' 'spatter' 'shot_noise' 'speckle_noise' 'impulse_noise' 'shifted_pixel' 'row_add_logic'
+#'novelty', 'heavy_smoke'
 severity_types=('1')
 #'1' '2' '3' '4' '5'
 

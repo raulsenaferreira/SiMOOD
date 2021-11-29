@@ -99,7 +99,7 @@ import AEBS
 import data_utils
 import draw_utils
 import torch
-from models.facebook import DETR as detr
+from facebook import DETR as detr
 import bbox_oracle
 
 # ==============================================================================

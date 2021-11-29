@@ -1,0 +1,4 @@
+ML MODEL: yolo; SEVERITY: 1; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {244: 'Pedestrian 0001Pedestrian 0001'}) 
+ML MODEL: yolo; SEVERITY: 1; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {247: 'Pedestrian 0001Pedestrian 0001Pedestrian 0001'}) 
+ML MODEL: yolo; SEVERITY: 1; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {239: 'Pedestrian 0001Pedestrian 0001'}) 
+ML MODEL: yolo; SEVERITY: 1; DAY_TIME: day; DETAILS: defaultdict(<class 'str'>, {265: 'Pedestrian 0001'}) 

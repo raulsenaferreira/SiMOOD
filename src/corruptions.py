@@ -601,8 +601,11 @@ def apply_threats(img, aug_type, severity):
                           snow_point_upper=0.5, 
                           brightness_coeff=1, always_apply=True)
 
-    elif aug_type == 'smoke':
+    elif aug_type == 'smoke' or aug_type == 'heavy_smoke':
         alpha_coef = [0.01, 0.05, 0.1, 0.2, 0.3]
+
+        if aug_type == 'heavy_smoke':
+            severity = 4
 
         try:
             transform = AUG.RandomFog(fog_coef_lower=0.3, fog_coef_upper=1, alpha_coef=alpha_coef[severity-1], always_apply=True)
@@ -662,7 +665,7 @@ def apply_threats(img, aug_type, severity):
             transform = AUG.ChannelDropout(always_apply=True)
 
     elif aug_type == 'channel_shuffle':
-        transform = AUG.ChannelShuffle(p=1)
+        transform = AUG.ChannelShuffle(always_apply=True)
 
     elif aug_type == 'gaussian_blur':
         blur_limit = [(3, 7), (8, 13), (14, 20), (21, 28), (29, 37)]

@@ -6,9 +6,16 @@ from PIL import Image
 
 class ML_object:
 
-    def __init__(self, object_detector_model_type):
+    def __init__(self, object_detector_model_type, use_expert_model=False, threat_type=None):
+
         self.object_detector_model_type = object_detector_model_type
-        self.YOLO_WEIGHTS_PATH = "yolov5/weights/yolov5s.pt"
+
+        self.YOLO_WEIGHTS_PATH = "yolov5/weights/yolov5s.pt" # default
+
+        if use_expert_model and threat_type!=None:
+            print('using a yolo model trained with data transformed with {} ...'.format(threat_type))
+            self.YOLO_WEIGHTS_PATH = 'runs/train/{}/weights/best.pt'.format(threat_type)
+
         self.object_detector = None
 
 
@@ -16,7 +23,7 @@ class ML_object:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') #device = 'cuda' if torch.cuda.is_available() else 'cpu' ...YOLOv5(model_path, device)
 
         if self.object_detector_model_type == 'yolo':
-            model_path = self.YOLO_WEIGHTS_PATH # it automatically downloads yolov5s model to given path
+            model_path = self.YOLO_WEIGHTS_PATH 
             self.object_detector = YOLOv5(model_path, device)
 
         elif self.object_detector_model_type == 'detr':
@@ -35,4 +42,4 @@ class ML_object:
         elif self.object_detector_model_type == 'detr':                                              
             img = Image.fromarray((incoming_image * 255).astype(np.uint8))                      
             scores, boxes = detr.detect(img, self.object_detector, device)                           
-            return [boxes, scores, detr.CLASSES]  
+            return [boxes, scores, detr.CLASSES] 
