@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.nv
 
 # C extensions
 *.so
@@ -132,9 +133,8 @@ dmypy.json
 # ML model
 *.pth
 yolov5/
+runs/
 
 # carla folders
 carla/
 agents/
-.carla/
-.agents/
