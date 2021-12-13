@@ -1,0 +1,28 @@
+Generating report for minidump
+
+Application version 4.24.3.0
+ ... built from changelist 0
+
+OS version Linux 5.4.0-86-generic (network name: marius)
+Running 6 x86_64 processors (12 logical cores)
+Exception was "SIGSEGV: invalid attempt to read memory at address 0x00000000000000a3"
+
+<SOURCE START>
+<SOURCE END>
+
+<CALLSTACK START>
+CarlaUE4-Linux-Shipping!_ZN5boost4asio6detail13epoll_reactor8start_opEiiRPNS2_16descriptor_stateEPNS1_10reactor_opEbb(+0x54)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x4053df4)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x4053780)
+CarlaUE4-Linux-Shipping!_ZN5boost4asio6detail14strand_service11do_completeEPvPNS1_19scheduler_operationERKNS_6system10error_codeEm(+0x71)
+CarlaUE4-Linux-Shipping!_ZN5boost4asio6detail9scheduler10do_run_oneERNS1_27conditionally_enabled_mutex11scoped_lockERNS1_21scheduler_thread_infoERKNS_6system10error_codeE(+0x337)
+CarlaUE4-Linux-Shipping!_ZN5boost4asio6detail9scheduler3runERNS_6system10error_codeE(+0x141)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x1d77ac4)
+libpthread.so.0!UnknownFunction(0x9608)
+libc.so.6!clone(+0x42)
+
+<CALLSTACK END>
+
+0 loaded modules
+
+Report end!

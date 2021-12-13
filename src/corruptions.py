@@ -168,9 +168,9 @@ def rain_mask(x):
 
 def condensation(x, severity=1):
     x = Image.fromarray((x * 255).astype(np.uint8))
-    foreground_image_path = ['src/img/condensation1.png', 'src/img/condensation1.png', 'src/img/condensation1.png', 'src/img/condensation1.png', 'src/img/condensation1.png']
-    alpha = [0.1, 0.2, 0.3, 0.4, 0.5]
-    img = overly_img(x, foreground_image_path[severity-1], alpha[severity-1])
+    foreground_image_path = 'src/img/condensation1.png'
+    alpha = [0.2, 0.3, 0.4, 0.5, 0.6]
+    img = overly_img(x, foreground_image_path, alpha[severity-1])
     return img
 
 
@@ -527,20 +527,21 @@ def apply_novelty(RGBA_x, severity, frame_num):
         text_img.paste(fg, ((text_img.width - fg.width) // 2, (text_img.height - fg.height) // 2), mask=fg.split()[3])
         return text_img
 
-    foreground_image_path = ['src/img/fallen_tree.png', 'src/img/crashed_car.png']
+    foreground_image_path = ['src/img/fallen_tree.png']# 'src/img/crashed_car.png'
     foreground_image = foreground_image_path[severity-1]    
 
-    scale_factor = [i for i in range(20, 0, -1)]
+    scale_factor = [i for i in range(50, 0, -1)]
 
     #these 4 lines of code are just to avoid that the object approaches the camera too fast
     slow_approach_lvl = [1, 2] # increase slow_approach_lvl to make the approach slower
-    for l in range(slow_approach_lvl[severity-1]):
-        scale_factor2 = [i for i in range(20, 0, -1)]
-        scale_factor = scale_factor+scale_factor2
+    # for l in range(slow_approach_lvl[1]):
+    #     scale_factor2 = [i for i in range(20, 0, -1)]
+    #     scale_factor = scale_factor+scale_factor2
 
     scale_factor.sort(reverse=True)
 
     #print(scale_factor)
+    #print(frame_num)
     size_index = scale_factor[frame_num]
     #print(size_index)
     
@@ -562,6 +563,50 @@ def apply_novelty(RGBA_x, severity, frame_num):
 
     return modified_image
 
+
+def apply_anomaly(RGBA_x, severity, frame_num):
+
+    def paste_img_rgba(bg, fg):
+        text_img = Image.new('RGBA', (bg.width,bg.height), (0, 0, 0, 0))
+        text_img.paste(bg,((text_img.width - bg.width) // 2, (text_img.height - bg.height) // 2))
+        text_img.paste(fg, ((text_img.width - fg.width) // 2, (text_img.height - fg.height) // 2), mask=fg.split()[3])
+        return text_img
+
+    foreground_image_path = ['src/img/crashed_car.png']# 
+    foreground_image = foreground_image_path[severity-1]    
+
+    scale_factor = [i for i in range(50, 0, -1)]
+
+    #these 4 lines of code are just to avoid that the object approaches the camera too fast
+    slow_approach_lvl = [1, 2] # increase slow_approach_lvl to make the approach slower
+    # for l in range(slow_approach_lvl[1]):
+    #     scale_factor2 = [i for i in range(20, 0, -1)]
+    #     scale_factor = scale_factor+scale_factor2
+
+    scale_factor.sort(reverse=True)
+
+    #print(scale_factor)
+    #print(frame_num)
+    size_index = scale_factor[frame_num]
+    #print(size_index)
+    
+    background_img = Image.fromarray((RGBA_x).astype(np.uint8))
+    
+    img2 = Image.open(foreground_image).convert('RGBA')
+    
+    basewidth = int(img2.size[0]/size_index)
+    
+    wpercent = (basewidth/float(img2.size[0]))
+    hsize = int((float(img2.size[1])*float(wpercent)))
+    img2 = img2.resize((basewidth,hsize), Image.ANTIALIAS)
+
+    img_rgba = paste_img_rgba(background_img, img2)
+
+    img_rgba = np.array(img_rgba)
+    modified_image = img_rgba[:, :, :3]
+    modified_image = modified_image[:, :, ::-1]
+
+    return modified_image
 
 
 def apply_threats(img, aug_type, severity):
@@ -632,7 +677,7 @@ def apply_threats(img, aug_type, severity):
                 image = transform(image=img)['image']
                 #image *= 255
                 image=rain_mask(image)
-                return image
+                return np.array(image)
 
         except:
             transform = AUG.RandomRain(slant_lower=-10, slant_upper=10, 
@@ -723,64 +768,64 @@ def apply_threats(img, aug_type, severity):
     # Not used at this moment
     elif aug_type == 'saturate':
         image=saturate(img)
-        return image
+        return np.array(image)
 
     # Not used at this moment
     elif aug_type == 'defocus_blur':
         image=defocus_blur(img, severity)
-        return image
+        return np.array(image)
 
     elif aug_type == 'shot_noise':
         image=shot_noise(img, severity)
-        return image
+        return np.array(image)
 
     elif aug_type == 'speckle_noise':
         image=speckle_noise(img, severity)
-        return image
+        return np.array(image)
 
     elif aug_type == 'spatter':
         image=spatter(img, severity)
-        return image
+        return np.array(image)
     
     elif aug_type == 'pixelate':
         image=pixelate(img, severity)
-        return image
+        return np.array(image)
 
     elif aug_type == 'elastic_transform':
         image=elastic_transform(img, severity)
-        return image
+        return np.array(image)
 
     elif aug_type == 'impulse_noise':
         image=impulse_noise(img, severity)
-        return image
+        return np.array(image)
 
     elif aug_type == 'shifted_pixel':
         image=shifted_pixel(img, severity)
-        return image
+        return np.array(image)
 
     elif aug_type == 'row_add_logic':
         image=row_add_logic(img, severity)
-        return image
+        return np.array(image)
 
     elif aug_type == 'ice':
         image=ice(img, severity)
-        return image
+        return np.array(image)
 
     elif aug_type == 'broken_lens':
         image=broken_lens(img, severity)
-        return image
+        return np.array(image)
 
     elif aug_type == 'condensation':
         image=condensation(img, severity)
-        return image
+        return np.array(image)
 
     elif aug_type == 'dirty':
         image=dirty(img, severity)
-        return image
+        return np.array(image)
 
     elif aug_type == 'fog':
         image=fog_haze(img, severity)
-        return image
+        return np.array(image)
 
 
     image = transform(image=img)['image']

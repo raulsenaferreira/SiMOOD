@@ -1,0 +1,31 @@
+Generating report for minidump
+
+Application version 4.24.3.0
+ ... built from changelist 0
+
+OS version Linux 5.4.0-86-generic (network name: marius)
+Running 6 x86_64 processors (12 logical cores)
+Exception was "SIGSEGV: invalid attempt to write memory at address 0x0000000000000003"
+
+<SOURCE START>
+<SOURCE END>
+
+<CALLSTACK START>
+CarlaUE4-Linux-Shipping!UnknownFunction(0x20269bd)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x211a456)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x1ca7a58)
+CarlaUE4-Linux-Shipping!_ZN5boost15throw_exceptionERKSt9exception(+0x5)
+CarlaUE4-Linux-Shipping!_ZN5carla9streaming6detail3tcp13ServerSession8CloseNowEv(+0x152)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x4053ed0)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x40540a9)
+CarlaUE4-Linux-Shipping!_ZN5boost4asio6detail9scheduler10do_run_oneERNS1_27conditionally_enabled_mutex11scoped_lockERNS1_21scheduler_thread_infoERKNS_6system10error_codeE(+0x337)
+CarlaUE4-Linux-Shipping!_ZN5boost4asio6detail9scheduler3runERNS_6system10error_codeE(+0x141)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x1d77ac4)
+libpthread.so.0!UnknownFunction(0x9608)
+libc.so.6!clone(+0x42)
+
+<CALLSTACK END>
+
+0 loaded modules
+
+Report end!

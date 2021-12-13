@@ -324,6 +324,7 @@ def game_loop(args):
         # How much frames should be considered for safety monitoring using a temporal approach
         frame_interval = 1
         frame_num = 0
+        frame_num_threat = 0
 
         array_data = []
         
@@ -354,8 +355,12 @@ def game_loop(args):
 
                 ########################################## THREATS on the fly ###########################################
                 if args.fault_type != 'none':                                                                           #
-                    if args.fault_type == 'novelty' or args.fault_type == 'anomaly':                                    #
-                        incoming_image = corruptions.apply_novelty(incoming_image, int(args.severity), frame_num)       #
+                    frame_num_threat += 1                                                                               #
+                    if args.fault_type == 'novelty':                                                                    #
+                        incoming_image = corruptions.apply_novelty(incoming_image, int(args.severity), frame_num_threat)#
+                        incoming_image = np.array(incoming_image, dtype=np.float32)                                     #
+                    elif args.fault_type == 'anomaly':                                                                  #
+                        incoming_image = corruptions.apply_anomaly(incoming_image, int(args.severity), frame_num_threat)#
                         incoming_image = np.array(incoming_image, dtype=np.float32)                                     #
                     else:                                                                                               #
                         incoming_image = corruptions.apply_threats(incoming_image, args.fault_type, int(args.severity)) #
@@ -760,7 +765,7 @@ def main():
                            choices=['brightness', 'contrast', 'sun_flare', 'rain', 'snow', 'fog', 'smoke', 'pixel_trap', 'row_add_logic', 'shifted_pixel', 'channel_shuffle', 
                            'channel_dropout', 'coarse_dropout', 'grid_dropout', 'spatter', 'gaussian_noise', 'shot_noise', 'speckle_noise', 'defocus_blur', 'elastic_transform', 
                            'impulse_noise', 'gaussian_blur', 'pixelate', 'ice', 'broken_lens', 'dirty', 'condensation', 'novelty', 'anomaly', 'heavy_smoke'],
-                           help='25 transformations from four types of OOD categories: novelty class, anomalies, distributional shift, and noise.')
+                           help='30 transformations from four types of OOD categories: novelty class, anomalies, distributional shift, and noise.')
 
     argparser.add_argument('--severity',
                            type=str,

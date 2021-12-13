@@ -1,0 +1,41 @@
+Generating report for minidump
+
+Application version 4.24.3.0
+ ... built from changelist 0
+
+OS version Linux 5.4.0-86-generic (network name: marius)
+Running 6 x86_64 processors (12 logical cores)
+Exception was "SIGSEGV: invalid attempt to write memory at address 0x0000000000000003"
+
+<SOURCE START>
+<SOURCE END>
+
+<CALLSTACK START>
+CarlaUE4-Linux-Shipping!UnknownFunction(0x20269bd)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x211a456)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x1ca7a58)
+CarlaUE4-Linux-Shipping!_ZN11clmdep_asio6detail15throw_exceptionINSt3__112system_errorEEEvRKT_(+0x5)
+CarlaUE4-Linux-Shipping!_ZN11clmdep_asio6detail14do_throw_errorERKNSt3__110error_codeEPKc(+0x3b)
+CarlaUE4-Linux-Shipping!_ZN11clmdep_asio6detail11throw_errorERKNSt3__110error_codeEPKc(+0x32)
+CarlaUE4-Linux-Shipping!_ZN11clmdep_asio21basic_socket_acceptorINS_2ip3tcpENS_23socket_acceptor_serviceIS2_EEEC2ERNS_10io_serviceERKNS1_14basic_endpointIS2_EEb(+0x235)
+CarlaUE4-Linux-Shipping!_ZN3rpc6server4implC2EPS0_t(+0x8a)
+CarlaUE4-Linux-Shipping!_ZN3rpc6serverC1Et(+0x59)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x1d97b2e)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x1caf854)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x1caf49a)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x1cb6100)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x3b14f41)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x3ab79fe)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x3ab5214)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x35e8e55)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x1c7781f)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x1c7a157)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x3da0077)
+libc.so.6!__libc_start_main(+0xf2)
+CarlaUE4-Linux-Shipping!UnknownFunction(0x1c77028)
+
+<CALLSTACK END>
+
+0 loaded modules
+
+Report end!
