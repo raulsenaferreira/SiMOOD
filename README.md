@@ -1,4 +1,4 @@
-# Repository of the paper "Safety enveloping of neural architectures"
+# Repository of the paper "SiMOOD: safety SiMulation testing of Out-Of-Distribution images"
 
 
 ## Usage
