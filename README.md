@@ -1,4 +1,4 @@
-# Repository of the paper "SiMOOD: safety SiMulation testing of Out-Of-Distribution images"
+# Repository of the paper "SiMOOD: evolutionary testing SiMulation with Out-Of-Distribution images"
 
 
 ## Usage
