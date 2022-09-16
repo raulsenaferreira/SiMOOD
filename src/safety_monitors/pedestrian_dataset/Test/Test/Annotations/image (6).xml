@@ -1,0 +1,32 @@
+<annotation>
+	<folder>VOC2007</folder>
+	<filename>image (6).xml</filename>
+	<source>
+		<database>The VOC2007 Database</database>
+		<annotation>PASCAL VOC2007</annotation>
+		<image>flickr</image>
+		<flickrid>138657386</flickrid>
+	</source>
+	<owner>
+		<flickrid>movingtargetzine</flickrid>
+		<name>Moving Target</name>
+	</owner>
+	<size>
+		<width>500</width>
+		<height>375</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>person</name>
+		<pose>Right</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>192</xmin>
+			<ymin>111</ymin>
+			<xmax>261</xmax>
+			<ymax>240</ymax>
+		</bndbox>
+	</object>
+</annotation>

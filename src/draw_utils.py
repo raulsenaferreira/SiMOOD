@@ -4,6 +4,7 @@ from typing import *
 import numpy as np
 import safe_regions
 from numba import jit
+import torch
 
 
 @jit(nopython=True)
@@ -15,6 +16,19 @@ def get_distance_by_camera(bbox):
     #feedback = ("{}".format(detection['label'])+ " " +"is"+" at {} ".format(round(distance/39.37, 2))+"Meters")
 
     return "{} meters".format(round(distance, 3)) # meters   /39.37
+
+
+def box_label(pygame, box, label='', color=(128, 128, 128), txt_color=(255, 255, 255)):
+    # Add one xyxy box to image with label
+    if pil or not is_ascii(label):
+        pygame.draw.rectangle(box, width=lw, outline=color)  # box
+        if label:
+            w, h = pygame.font.getsize(label)  # text width, height
+            outside = box[1] - h >= 0  # label fits outside box
+            pygame.draw.rectangle([box[0],
+                                 box[1] - h if outside else box[1],
+                                 box[0] + w + 1,
+                                 box[1] + 1 if outside else box[1] + h + 1], fill=color)
 
 
 def draw_safety_margin(pygame, surface, color, lines, thickness):
@@ -42,6 +56,22 @@ def bbox_conversion(box, width, height):
     return [int(box[0]), int(box[1]), int(box[2]), int(box[3])]
 
 
+def draw_bboxes_safety_area(view_width, view_height, camera_manager, display):
+    # Create a surface for the safety margins
+    safety_surface = pygame.Surface((view_width, view_height))
+    safety_surface.set_colorkey((0, 0, 0))
+
+    # Initialize font if not done already
+    if not hasattr(camera_manager, 'bb_font'):
+        camera_manager.bb_font = pygame.font.SysFont('Monospace', 25)
+        camera_manager.bb_font.set_bold(True)
+
+    draw_safety_margin(pygame, safety_surface, "green", safe_regions.WARNING_AREA, 5)
+    draw_safety_margin(pygame, safety_surface, "green", safe_regions.DANGER_AREA, 5)
+
+    display.blit(safety_surface, (0, 0))
+
+
 def draw_bboxes(world, 
                 carla,
                 camera_manager,
@@ -53,6 +83,7 @@ def draw_bboxes(world,
                 show_distance= False):
     
     detected_objects = []
+    names = None
     bboxes = None
     scores = None
     categories = None
@@ -70,6 +101,23 @@ def draw_bboxes(world,
         bboxes = results[0]
         scores = results[1]
         categories = results[2]
+
+    elif args.object_detector_model_type == 'custom_yolo':
+        arr_predictions, names = results
+        bboxes = []
+        scores = []
+        categories = []
+        #from utils.general import xyxy2xywh
+        #gn = torch.tensor((3,640,640))[[1, 0, 1, 0]]  # normalization gain whwh
+        #print('results',results)
+        #for predictions in results:
+        predictions = arr_predictions[0]
+        #for *xyxy, conf, cls in reversed(predictions):
+            #box_label(xyxy, label, color=colors(c, True))
+            # bboxes.append(xyxy)
+            # scores.append(conf)
+            # categories.append(int(cls)) # integer class
+        *bboxes, scores, categories = reversed(predictions)
 
     #print('bboxes', bboxes)
     #print('scores', scores)
@@ -107,6 +155,9 @@ def draw_bboxes(world,
 
         if args.object_detector_model_type == 'yolo':
             label = results.names[int(category.item())]
+        elif args.object_detector_model_type == 'custom_yolo':
+            #print(int(category.item()))
+            label = names[int(category.item())]#categories[score.argmax()]
         elif args.object_detector_model_type == 'detr':
             label = categories[score.argmax()]
         
@@ -120,6 +171,9 @@ def draw_bboxes(world,
         #print('{} detected \n bounding box {} \n score {} \n'.format(label, bbox, score[score.argmax()]))
 
         if args.object_detector_model_type == 'yolo':
+            # converting yolov5 bbox to acceptable format for pygame rect
+            bbox = bbox_conversion(bbox, view_width, view_height)
+        elif args.object_detector_model_type == 'custom_yolo':
             # converting yolov5 bbox to acceptable format for pygame rect
             bbox = bbox_conversion(bbox, view_width, view_height)
 

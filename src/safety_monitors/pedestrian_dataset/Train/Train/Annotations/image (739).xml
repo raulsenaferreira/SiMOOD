@@ -1,0 +1,25 @@
+<annotation>
+	<folder>person-like</folder>
+	<filename>image (739).xml</filename>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>612</width>
+		<height>612</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>person-like</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>100</xmin>
+			<ymin>5</ymin>
+			<xmax>496</xmax>
+			<ymax>555</ymax>
+		</bndbox>
+	</object>
+</annotation>

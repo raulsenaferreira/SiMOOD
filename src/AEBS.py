@@ -43,7 +43,8 @@ def emergency_braking(world,
                 WARNING_AREA,
                 DANGER_AREA,
                 detected_objects_per_frame,
-                args):
+                args, 
+                individual):
     
     AEBS_activated = False
 
@@ -53,61 +54,64 @@ def emergency_braking(world,
 
     player = None
     for actor in world.world.get_actors():
-        if actor.attributes.get('role_name') == 'hero':
-            player = actor
-            break
+        try:
+            if actor.attributes.get('role_name') == 'hero':
+                player = actor
+                break
+        except:
+            pass
     ctrl = carla.VehicleControl()
 
     label_dawing_operations = []
     
     for det_object in detected_objects_per_frame:
-        if det_object is not None:
-            bbox = det_object[0]
-            score = det_object[1]
-            label = det_object[2]
+        #if det_object is not None:
+        bbox = det_object[0]
+        score = det_object[1]
+        label = det_object[2]
 
-            if not args.no_intervention:
+        #Verify if an object enters in the warning/danger areas
+        if is_rect_overlap(bbox, WARNING_AREA):
+            draw_safety_margin(pygame, safety_surface, "yellow", safe_regions.WARNING_AREA, 5)
 
-                #Verify if an object enters in the warning/danger areas
-                if is_rect_overlap(bbox, WARNING_AREA):
-                    draw_safety_margin(pygame, safety_surface, "yellow", safe_regions.WARNING_AREA, 5)
+            if label == 'person':
+                draw_safety_margin(pygame, safety_surface, "red", safe_regions.DANGER_AREA, 5)
+                AEBS_activated = True
+                #ctrl.steer = -0.7
+                ctrl.brake = 0.99
+                ctrl.hand_brake=True
+                #carla.Vehicle.set_autopilot(False)
+                carla.Vehicle.apply_control(player, ctrl)
+                #time.sleep(2)
+                #player.set_simulate_physics(False)
 
-                    if label == 'person':
-                        draw_safety_margin(pygame, safety_surface, "red", safe_regions.DANGER_AREA, 5)
-                        AEBS_activated = True
-                        #ctrl.steer = -0.7
-                        ctrl.brake = 0.99
-                        ctrl.hand_brake=True
-                        #carla.Vehicle.set_autopilot(False)
-                        carla.Vehicle.apply_control(player, ctrl)
-                        #time.sleep(2)
-                        #player.set_simulate_physics(False)
+        elif is_rect_overlap(bbox, DANGER_AREA):
+            draw_safety_margin(pygame, safety_surface, "red", safe_regions.DANGER_AREA, 5)
 
-                elif is_rect_overlap(bbox, DANGER_AREA):
-                    draw_safety_margin(pygame, safety_surface, "red", safe_regions.DANGER_AREA, 5)
+            if label == 'person':
+                AEBS_activated = True
+                #ctrl.steer = -0.7
+                ctrl.brake = 0.99
+                ctrl.hand_brake=True
+                #carla.Vehicle.set_autopilot(False)
+                carla.Vehicle.apply_control(player, ctrl)
+                #time.sleep(2)
+                #player.set_simulate_physics(False)
 
-                    if label == 'person':
-                        AEBS_activated = True
-                        #ctrl.steer = -0.7
-                        ctrl.brake = 0.99
-                        ctrl.hand_brake=True
-                        #carla.Vehicle.set_autopilot(False)
-                        carla.Vehicle.apply_control(player, ctrl)
-                        #time.sleep(2)
-                        #player.set_simulate_physics(False)
+        colhist = world.collision_sensor.get_collision_history()
 
-                colhist = world.collision_sensor.get_collision_history()
+        if len(colhist) > 0:
+            threat,intensity = individual[0]
+            # save info about the frame and the params that led to the hazard
+            with open("src/results/hazards/{0}_{1}.csv".format(str(threat),str(intensity)), "a") as myfile:
+                myfile.write(('ML MODEL: {}; THREAT: {}; LEVEL: {}; DETAILS: {} \n').format(str(args.object_detector_model_type),
+                 str(threat), str(intensity), str(colhist)))
 
-                if len(colhist) > 0:
-                    # save info about the frame and the params that led to the hazard
-                    with open("src/hazards/{0}.csv".format(str(args.fault_type)), "a") as myfile:
-                        myfile.write(('ML MODEL: {}; SEVERITY: {}; DAY_TIME: {}; DETAILS: {} \n').format(str(args.object_detector_model_type), str(args.severity), str(args.time_of_day), str(colhist)))
+            #terminates the program if there is a hazard
+            quit()
 
-                    #terminates the program if there is a hazard
-                    quit()
-
-                if AEBS_activated:
-                    return AEBS_activated
+        if AEBS_activated:
+            return AEBS_activated
 
     display.blit(safety_surface, (0, 0))
 

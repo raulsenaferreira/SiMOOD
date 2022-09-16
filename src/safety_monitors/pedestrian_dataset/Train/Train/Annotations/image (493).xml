@@ -1,0 +1,28 @@
+<annotation>
+	<folder>VOC2012</folder>
+	<filename>image (493).xml</filename>
+	<source>
+		<database>The VOC2008 Database</database>
+		<annotation>PASCAL VOC2008</annotation>
+		<image>flickr</image>
+	</source>
+	<size>
+		<width>266</width>
+		<height>400</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>person</name>
+		<pose>Frontal</pose>
+		<truncated>1</truncated>
+		<occluded>1</occluded>
+		<bndbox>
+			<xmin>105</xmin>
+			<ymin>241</ymin>
+			<xmax>202</xmax>
+			<ymax>400</ymax>
+		</bndbox>
+		<difficult>0</difficult>
+	</object>
+</annotation>

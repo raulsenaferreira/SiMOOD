@@ -22,7 +22,7 @@ def is_rect_overlap(bbox,R2):
         return False
 
 ######################### detection methods #########################
-def detect_dangerous_fog(img, react):
+def detect_dangerous_fog(img):
     
     is_dangerous_fog = False
 
@@ -42,28 +42,24 @@ def detect_dangerous_fog(img, react):
 
     FOG_THRESHOLD = 1580
     PIL_image = Image.fromarray(np.uint8(img)).convert('RGB')
-    PIL_image = Image.fromarray(img.astype('uint8'), 'RGB')
+    #PIL_image = Image.fromarray(img.astype('uint8'), 'RGB')
     im = PIL_image.convert('L')
     var = slow_horizontal_variance(im)
 
     is_dangerous_fog = var < FOG_THRESHOLD
-    #print('FOGGY ???',fog)
+    #print('is_dangerous_fog ???',is_dangerous_fog)
 
-    if react and is_dangerous_fog:
-        dehazed_img = image_dehazing(img)
-        #dehazed_img = img # do nothing, for debug purposes
-        return dehazed_img, is_dangerous_fog
-    else:
-        return img, is_dangerous_fog
+    return is_dangerous_fog
+    
 
-def detect_if_different_ODD(detection, react):
+def detect_if_different_ODD(detection):
     # verifies if ML prediction makes sense according to the context 
     # (ex: a class donut probably will not cross the street)
     different_ODD = True
 
     return different_ODD
 
-def detect_dangerous_approximation(data_obj, react=False):
+def detect_dangerous_approximation(data_obj):
     # verifies if detected object has suddenly disapeared when it's actualy in a dangerous zone
     # Ex: pedestrian walking towards to the street suddenly disapears
     frame = 0
@@ -136,14 +132,14 @@ def detect_dangerous_approximation(data_obj, react=False):
     return None, has_temporal_incoherence
 
 
-def detect_probable_unseen_object(image, react):
+def detect_probable_unseen_object(image):
     # apply the concept of introspection
     # the goal is decrease false negatives in the task of detecting an object
     is_there_an_obj = False
 
     return is_there_an_obj
 
-def detect_temporal_incoherence(data_obj, react):
+def detect_temporal_incoherence(data_obj):
     # verifies if detected target object just teleported from a region to another, or
     # if detected target object touchs two regions at the same time 
     # as a result, this method delete the object due to a possible temporal incoherence
@@ -185,7 +181,7 @@ def detect_temporal_incoherence(data_obj, react):
                 array_data[i][j] = None
                 has_temporal_incoherence = True
 
-    return array_data, has_temporal_incoherence
+    return has_temporal_incoherence
 
 
 ######################### reaction methods #########################
@@ -193,19 +189,22 @@ def image_dehazing(img):
     #img = ffa.run('its', img*255)
     #img = psd.run(img)
     img = aod.unfog_image(img)
-    
-    resized_img = np.reshape(img[0], (480,640,3))#np.transpose(img[0])
+    #print('np.shape(img)', np.shape(img))
+    #resized_img = np.reshape(img[0], (480,640,3))#np.transpose(img[0])
     #print('np.shape(resized_img)', np.shape(resized_img))
-    return resized_img
-
+    return img#resized_img
 
 
 #mapping
-THREATS = {'smoke': detect_dangerous_fog, 
+DETECTION = {'smoke': detect_dangerous_fog, 
            'fog': detect_dangerous_fog,
            'temporal_incoherence': detect_temporal_incoherence
     }
 
+REACTION = {'smoke': image_dehazing, 
+           'fog': image_dehazing,
+           'temporal_incoherence': detect_temporal_incoherence
+    }
 
 
 class Safety_monitor:
@@ -216,18 +215,31 @@ class Safety_monitor:
 
     def run(self):
         try:
+            detection = None
+            reaction = None
+            is_threat_detected = False
+            has_reacted = False
+
             if self.verification == 'pre':
                 #verifying threats on the image (it should be parallelized)
                 #smoke/fog/haze
-                monitor = THREATS['smoke']
+                detection = DETECTION['smoke']
+                reaction = REACTION['smoke']
 
             elif self.verification == 'post':
                 #verifying threats after the object detection task on the image (it should be parallelized)
-                monitor = THREATS['temporal_incoherence']
+                detection = DETECTION['temporal_incoherence']
+                reaction = REACTION['temporal_incoherence']
 
-            image, has_reacted = monitor(self.data, self.react)
+            is_threat_detected = detection(self.data)
+            
+            if is_threat_detected and self.react:
+                result_reaction = reaction(self.data)
+                has_reacted = True
+                return result_reaction, is_threat_detected, has_reacted
 
-            return image, has_reacted
+            else:
+                return self.data, is_threat_detected, has_reacted
 
         except Exception as e:
             with open("src/log/log_safety_monitor.log", "a") as myfile:

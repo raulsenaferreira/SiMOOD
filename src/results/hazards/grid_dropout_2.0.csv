@@ -1,0 +1,3 @@
+ML MODEL: yolo; THREAT: grid_dropout; LEVEL: 2.0; DETAILS: defaultdict(<class 'str'>, {230: 'Pedestrian 0001', 233: 'Pedestrian 0001Pedestrian 0001Pedestrian 0001Pedestrian 0001', 234: 'Pedestrian 0001Pedestrian 0001Pedestrian 0001Pedestrian 0001Pedestrian 0001'}) 
+ML MODEL: yolo; THREAT: grid_dropout; LEVEL: 2.0; DETAILS: defaultdict(<class 'str'>, {250: 'Pedestrian 0001'}) 
+ML MODEL: yolo; THREAT: grid_dropout; LEVEL: 2.0; DETAILS: defaultdict(<class 'str'>, {237: 'Pedestrian 0001', 238: 'Pedestrian 0001Pedestrian 0001Pedestrian 0001Pedestrian 0001Pedestrian 0001'}) 

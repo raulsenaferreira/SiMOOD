@@ -20,89 +20,34 @@ import datetime
 import shutil
 import glob
 import os
+import psutil
 import sys
 import cv2 as cv
+import traceback
 # ================================ custom ==============================================
 from bounding_box_extractor import get_2d_bounding_box, get_class_from_actor_type
-from safety_monitors import baseline_safety_monitors as SM_base
 import corruptions
 import AEBS
-import data_utils
 import draw_utils
 import ML_functions
 import evaluation_module
+from time import process_time
+from safety_monitors import baseline_safety_monitors as SM
+
+CARLA_EGG_PATH = '../carla/dist/carla-0.9.11-py3.7-linux-x86_64.egg'
+# -- find carla module 
+try:
+    sys.path.append(glob.glob(CARLA_EGG_PATH)[0])
+except IndexError:
+    print("IndexError")
+    pass
+
+import carla
+
 
 # ==============================================================================
 # -- Global functions ----------------------------------------------------------
 # ==============================================================================
-
-SCENARIO_PROCESS = None
-LOG_PERCEPTION_PATH = "src/log/perception.csv"
-LOG_PERCEPTION_TXT = 'Exception during object image transformation for {} using {}: {} \n'
-CARLA_EGG_PATH = '../carla/dist/carla-0.9.11-py3.7-linux-x86_64.egg'
-
-def setup_weather(world, args):
-    weather = world.get_weather()
-
-    if args.rain == 'none':
-        weather.precipitation = 0
-        weather.precipitation_deposits = 0
-        weather.wetness = 0
-    elif args.rain == 'light':
-        weather.precipitation = 20
-        weather.precipitation_deposits = 20
-        weather.wetness = 20
-    elif args.rain == 'medium':
-        weather.precipitation = 50
-        weather.precipitation_deposits = 50
-        weather.wetness = 50
-    elif args.rain == 'heavy':
-        weather.precipitation = 100
-        weather.precipitation_deposits = 100
-        weather.wetness = 100
-
-    # Note: Fog seems to be only working properly with vulkan renderer
-    if args.fog == 'none':
-        weather.fog_density = 0
-        weather.fog_distance = 0
-        weather.fog_falloff = 0
-    elif args.fog == 'light':
-        weather.fog_density = 20
-        weather.fog_distance = 0
-        weather.fog_falloff = 0.2
-    elif args.fog == 'medium':
-        weather.fog_density = 50
-        weather.fog_distance = 0
-        weather.fog_falloff = 0.5
-    elif args.fog == 'heavy':
-        weather.fog_density = 100
-        weather.fog_distance = 0
-        weather.fog_falloff = 1
-
-    if args.clouds == 'none':
-        weather.cloudiness = 0
-    elif args.clouds == 'light':
-        weather.cloudiness = 20
-    elif args.clouds == 'medium':
-        weather.cloudiness = 50
-    elif args.clouds == 'heavy':
-        weather.cloudiness = 100
-
-    if args.time_of_day == 'day':
-        weather.sun_altitude_angle = 60
-        weather.sun_azimuth_angle = 10
-    elif args.time_of_day == 'sunset':
-        weather.sun_altitude_angle = 0.5
-        weather.sun_azimuth_angle = 180
-    elif args.time_of_day == 'night':
-        weather.sun_altitude_angle = -90
-        weather.sun_azimuth_angle = 0
-
-    weather.wind_intensity = 0
-
-    world.set_weather(weather)
-
-
 def calculate_camera_calibration(image_width, image_height, fov):
     calibration = np.identity(3)
     calibration[0, 2] = image_width / 2.0
@@ -127,22 +72,15 @@ def numpy_rgba2rgb(array):
 
     return array
 
+
 # ==============================================================================
 # -- World ---------------------------------------------------------------------
 # ==============================================================================
+# Global variables
+SCENARIO_PROCESS = None
 
-# -- find carla module 
-try:
-    #sys.path.append(glob.glob('/opt/carla-simulator/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
-    sys.path.append(glob.glob(CARLA_EGG_PATH)[0])
-except IndexError:
-    print("IndexError")
-    pass
-
-import carla
 
 class WorldSR(World):
-
     restarted = False
 
     def restart(self):
@@ -182,12 +120,6 @@ class WorldSR(World):
         actor_type = get_actor_display_name(self.player)
         self.hud.notification(actor_type)
 
-    
-    def modify_vehicle_physics(self, vehicle):
-        physics_control = vehicle.get_physics_control()
-        physics_control.use_sweep_wheel_collision = True
-        vehicle.apply_physics_control(physics_control)
-
 
     def tick(self, clock):
         if len(self.world.get_actors().filter(self.player_name)) < 1:
@@ -195,6 +127,7 @@ class WorldSR(World):
 
         self.hud.tick(self, clock)
         return True
+
 
     def destroy(self):
         if self.radar_sensor is not None:
@@ -212,14 +145,41 @@ class WorldSR(World):
         if self.player is not None:
             self.player.destroy()
 
+
 # ==============================================================================
 # -- game_loop() ---------------------------------------------------------------
 # ==============================================================================
+def game_loop(args, individual):
+    LOG_PERCEPTION_PATH = "src/log/perception.csv"
+    LOG_PERCEPTION_TXT = 'Exception during object image transformation for {} using {}: {} \n'
+    RESULTS_POS_NEG_ML_EI_PATH = "src/results/ML/entire_image/{}_{}.csv" # ex:('smoke', 3)
+    RESULTS_POS_NEG_ML_SRI_PATH = "src/results/ML/specific_region_image/{}_{}.csv"
+    RESULTS_POS_NEG_SM_PATH =  "src/results/SM/{}_{}.csv"
+    RESULTS_POS_NEG_SM_ML_PATH =  "src/results/SM_ML/{}_{}.csv"
+    RESULTS_POS_NEG_ML_EI_TXT = "{};{};{};{}" # #_frames; tp; fp; fn
+    RESULTS_POS_NEG_ML_SRI_TXT = "{};{};{};{}" # #_frames; tp; fp; fn
+    RESULTS_POS_NEG_SM_TXT = "{};{};{}" # #_frames; SM input; SM output
+    RESULTS_POS_NEG_SM_ML_TXT = "{};{};{};{};{}" # #_frames; SM tp; SM tn; SM fp; SM fn;
 
-def game_loop(args):
     pygame.init()
     pygame.font.init()
     world = None
+
+    frame_num = 0
+
+    # How much frames should be considered for safety monitoring using a temporal approach
+    frame_interval = 1
+    frame_num_monitor = 0
+    # and for novelty
+    frame_num_novelty = 0
+    array_data_frame = []
+
+    #for evaluation purposes
+    show_ground_truth_bbox_screen = False # True if you want to show the ground truth bboxes
+    true_pos_ML, false_pos_ML, false_neg_ML = [], [], []
+    true_pos_ML_region, false_pos_ML_region, false_neg_ML_region = [], [], []
+    arr_SM_pre_detection, arr_SM_pos_detection, arr_SM_pre_reaction, arr_SM_pos_reaction = [], [], [], []
+    true_pos_SM, true_neg_SM, false_pos_SM, false_neg_SM = [], [], [], []
 
     if not args.no_recording:
         # IKS: Create the directory to store all sensor and meta data
@@ -254,9 +214,7 @@ def game_loop(args):
         client = carla.Client(args.host, args.port)
         client.set_timeout(2.0)
 
-        display = pygame.display.set_mode(
-            (args.width, args.height),
-            pygame.HWSURFACE | pygame.DOUBLEBUF)
+        display = pygame.display.set_mode((args.width, args.height), pygame.HWSURFACE | pygame.DOUBLEBUF)
 
         hud = HUD(args.width, args.height)
         # hud.toggle_info()  # Hide HUD
@@ -266,10 +224,6 @@ def game_loop(args):
         # controller = KeyboardControl(world, args.autopilot)
 
         clock = pygame.time.Clock()
-
-        # IKS: Setup weather
-        time.sleep(2)  # To safely overwrite weather set by OpenScenario
-        setup_weather(world.world, args)
 
         # IKS: Switch to synchronous mode to ensure synchrony between the world and the sensors
         settings = world.world.get_settings()
@@ -311,155 +265,166 @@ def game_loop(args):
 
         # IKS: Store rgb camera data
         image_queue = []
-        #def save_rgb_camera(image: carla.libcarla.Image):
-        #    image_queue.append(image)
+        # def save_rgb_camera(image: carla.libcarla.Image):
+        #     image_queue.append(image)
 
-        #world.camera_manager.injected_listener = save_rgb_camera
+        # world.camera_manager.injected_listener = save_rgb_camera
 
         # IKS: Store actor states
         world_state_queue = []
-
-        # Storing images for saving as RGB images in the end of simulation
-        image_queue = []
-        # How much frames should be considered for safety monitoring using a temporal approach
-        frame_interval = 1
-        frame_num = 0
-        frame_num_threat = 0
-
-        array_data = []
         
+
         WARNING_AREA = None
 
-        #loading obj detector model
-        ml_model = ML_functions.ML_object(args.object_detector_model_type, args.use_expert_model, args.fault_type)
-        ml_model.load_model()
-
-        #for evaluation purposes
-        true_pos_SUT, true_neg_SUT, false_pos_SUT, false_neg_SUT = [], [], [], []
-        show_ground_truth_bbox_screen = False # True if you want to show the ground truth bboxes
+        if args.object_detector_model_type != 'none':
+            #loading obj detector model
+            ml_model = ML_functions.ML_object(args.object_detector_model_type, args.use_expert_model, args.fault_type, args.augmented_data_percentage)
+            ml_model.load_model()
         
         ################################################## stream looping ##################################################
         while True:
             world.world.tick()
             clock.tick_busy_loop()
-
-            # if controller.parse_events(client, world, clock):
-            #     return
-
             world.render(display)
                 
             if world.camera_manager.surface is not None:
-                true_pos_SUT_per_frame, true_neg_SUT_per_frame, false_pos_SUT_per_frame, false_neg_SUT_per_frame = 0, 0, 0, 0
+                true_pos_ML_per_frame, false_pos_ML_per_frame, false_neg_ML_per_frame = 0, 0, 0
+                true_pos_SM_per_frame, true_neg_SM_per_frame, false_pos_SM_per_frame, false_neg_SM_per_frame = 0, 0, 0, 0
+                threat_detection_per_frame = 0
+
                 incoming_image = world.camera_manager.np_image #RGBA
-                frame_num += 1
+
+                frame_num+=1
+                frame_num_monitor+=1
 
                 ########################################## THREATS on the fly ###########################################
-                if args.fault_type != 'none':                                                                           #
-                    frame_num_threat += 1                                                                               #
+                if args.fault_type != 'none' and incoming_image is not None:#threatspath != 'none':                                                    #   
+                    frame_num_novelty += 1                                                                              #
                     if args.fault_type == 'novelty':                                                                    #
-                        incoming_image = corruptions.apply_novelty(incoming_image, int(args.severity), frame_num_threat)#
+                        incoming_image = corruptions.apply_novelty(incoming_image, frame_num_novelty)                   #
                         incoming_image = np.array(incoming_image, dtype=np.float32)                                     #
                     elif args.fault_type == 'anomaly':                                                                  #
-                        incoming_image = corruptions.apply_anomaly(incoming_image, int(args.severity), frame_num_threat)#
-                        incoming_image = np.array(incoming_image, dtype=np.float32)                                     #
-                    else:                                                                                               #
-                        incoming_image = corruptions.apply_threats(incoming_image, args.fault_type, int(args.severity)) #
-                else:                                                                                                   #
-                    incoming_image = numpy_rgba2rgb(world.camera_manager.np_image)                                      #
-                ########################################## THREATS on the fly ###########################################
+                        incoming_image = corruptions.apply_anomaly(incoming_image, frame_num_novelty)                                              
+                        incoming_image = np.array(incoming_image, dtype=np.float32) 
+                    else:
+                        incoming_image = numpy_rgba2rgb(incoming_image)                                                                                              #
+                        incoming_image = corruptions.apply_mult_threats(incoming_image, individual)
+                ########################################## END THREATS on the fly #######################################
+                else:                                                                                                   
+                    incoming_image = numpy_rgba2rgb(world.camera_manager.np_image)                                      
                 
-                image_queue.append(incoming_image)
+                #store img to save in case recording is activated
+                if not args.no_recording:
+                    image_queue.append(incoming_image)
+
+                ########################################## Safety Monitor ###########################
+                # VERIFY THE INPUTS: image conditions and correct the image if necessary            #
+                if not args.no_intervention and incoming_image is not None:
+                    try:
+                        SM_object = SM.Safety_monitor(incoming_image, verification='pre')           #
+                        incoming_image, is_threat_detected, has_reacted = SM_object.run()
+
+                        threat_detection_per_frame = np.multiply(is_threat_detected, 1) 
+
+                        arr_SM_pre_detection.append(is_threat_detected)
+                        arr_SM_pre_reaction.append(has_reacted)    
+                        #print('has_reacted', has_reacted)
+
+                    except Exception as e:
+                        print('Exception in the SM module (pre):', e)                                     #
+                ########################################## Safety Monitor ###########################
 
                 # rendering the image
-                real_time_view = pygame.surfarray.make_surface(incoming_image.swapaxes(0, 1))
-                world.camera_manager.surface = real_time_view
-                #display.blit(real_time_view, (0, 0))
-                
-                ########################################## Safety Monitor ###################################
-                # VERIFY THE INPUTS: image conditions and correct the image if necessary                    #
-                SM = SM_base.Safety_monitor(incoming_image, verification='pre')                             #
-                incoming_image, has_reacted = SM.run()                                                      #
-                ########################################## Safety Monitor ###################################
-
-                #incoming_image = cv.cvtColor(incoming_image, cv.COLOR_BGR2RGB)
-                
-                ########################################## ML model #########################################
-                predictions = None                                                                          #
-                try:                                                                                        #
-                    predictions = ml_model.make_predictions(incoming_image)                                 #
-                                                                                                            #
-                except Exception as e:                                                                      #
-                    with open(LOG_PERCEPTION_PATH, "a") as myfile:                                          #
-                        myfile.write(LOG_PERCEPTION_TXT.format(str(args.fault_type),                        #
-                            str(args.object_detector_model_type), str(e)))                                  #
-                ########################################## ML model #########################################
+                world.camera_manager.surface = pygame.surfarray.make_surface(incoming_image.swapaxes(0, 1))
+                #display.blit(world.camera_manager.surface, (0, 0))
 
                 view_width, view_height = int(args.res.split('x')[0]), int(args.res.split('x')[1])
 
-                # drawing boxes from predictions. Variable detected_objects is an array of bboxes ...
-                # (already converted in a good format to be used in pygame functions), scores, and labels 
-                if predictions is not None:
-                    detected_objects_per_frame, safety_surface, WARNING_AREA, DANGER_AREA = draw_utils.draw_bboxes(
-                        world, carla, world.camera_manager, display, view_width, view_height, predictions, args)
-                    
-                    array_data.append(detected_objects_per_frame) # to be used in temporal functions
+                if args.object_detector_model_type != 'none' and incoming_image is not None:
+                    ########################################## ML model #########################################
+                    predictions = None                                                                          #
+                    try:                                                                                        #
+                        predictions = ml_model.make_predictions(incoming_image)                                 #
+                                                                                                                #
+                    except Exception as e:                                                                      #
+                        with open(LOG_PERCEPTION_PATH, "a") as myfile:                                          #
+                            myfile.write(LOG_PERCEPTION_TXT.format(str(args.fault_type),                        #
+                                str(args.object_detector_model_type), str(e)))                                  #
+                    ########################################## ML model #########################################
 
-                if frame_num == frame_interval:
-                    frame_num = 0
-                    ########################################## Safety Monitor #######################################
-                    # VERIFY THE OUTPUTS: image conditions and correct the image if necessary                       #
-                    # temporal monitoring (monitors the coherence of the ML predictions)                            #
-                    dummy_surface = pygame.Surface((view_width, view_height)) #just for polygon calculation purposes#
-                    SM = SM_base.Safety_monitor((array_data, dummy_surface), verification='post')                   #
-                    array_data, has_reacted = SM.run()                                                              #
-                    ########################################## Safety Monitor #######################################
-                    array_data = []
+                    # drawing boxes from predictions. Variable detected_objects is an array of bboxes ...
+                    # (already converted in a good format to be used in pygame functions), scores, and labels 
+                    if predictions is not None:
+                        #if args.object_detector_model_type == 'custom_yolo'
+                        detected_objects_per_frame, safety_surface, WARNING_AREA, DANGER_AREA = draw_utils.draw_bboxes(
+                            world, carla, world.camera_manager, display, view_width, view_height, predictions, args)
+                        
+                        array_data_frame.append(np.copy(detected_objects_per_frame)) # to be used in temporal functions
 
-                if predictions is not None:
-                    ################################################## EMERGENCY BRAKING SYSTEM ################################################################
-                    AEBS_activated = AEBS.emergency_braking(world, carla, display, safety_surface, WARNING_AREA, DANGER_AREA, detected_objects_per_frame, args) #
-                    ################################################## EMERGENCY BREAKING SYSTEM ################################################################
+                    if not args.no_intervention:
+                        try:
+                            if frame_num_monitor == frame_interval:
+                                ########################################## Safety Monitor #######################################
+                                # VERIFY THE OUTPUTS: temporal monitoring (plausibility check of the ML predictions)            #
+                                dummy_surface = pygame.Surface((view_width, view_height))#just for polygon calculation purposes #
+                                SM_object = SM.Safety_monitor((array_data_frame, dummy_surface), verification='post')           #
+                                _, is_threat_detected, has_reacted = SM_object.run()
 
-                    #################################
-                    # initialize the safety monitor object
-                    # verifying threats after the perception system decision
+                                threat_detection_per_frame = np.multiply(is_threat_detected, 1)
 
-                    # #we perform a monitoring according to a specific object
-                    # target_class = 'person' 
-                    # # array_data_per_frame it's an array of objects representing the target class
-                    # array_data_per_frame = data_utils.compose_data(predictions, args, array_data, target_class, view_width, view_height)
+                                arr_SM_pos_detection.append(is_threat_detected)
+                                arr_SM_pos_reaction.append(has_reacted)
+                                #print('has_reacted', has_reacted)                                                              #
+                                ########################################## Safety Monitor #######################################
+                                array_data_frame = []
+                                frame_num_monitor = 0
 
-                    # if len(array_data_per_frame) > 0:
-                    #     array_data.append(array_data_per_frame)
+                        except Exception as e:
+                            print('Exception in the SM module (post):', e)
 
-                    # # temporal monitoring functions (monitors the functionality)
-                    # if frame_num == frame_interval:
-                    #     frame_num = 0
-                    #     if len(array_data) > 0 and AEBS_activated==False and LOCK==False:
-                    #         dummy_surface = pygame.Surface((view_width, view_height)) #just for polygon calculation purposes
-                    #         SM = SM_base.Safety_monitor((array_data, dummy_surface), verification='post')
-                    #         _, has_reacted = SM.run() 
-                            
-                    #         array_data = []
-                    #     elif AEBS_activated:
-                    #         LOCK = AEBS_activated
-                    #print('has_reacted:', has_reacted)
-                    #################################
+                    if predictions is not None:
+                        ################################################## EMERGENCY BRAKING SYSTEM ################################################################
+                        AEBS_activated = AEBS.emergency_braking(world, carla, display, safety_surface, WARNING_AREA, DANGER_AREA,
+                         detected_objects_per_frame, args, individual) #
+                        ################################################## EMERGENCY BREAKING SYSTEM ################################################################
 
-                    ############################### SUT evaluation ###############################
-                    
-                    image = semantic_seg_queue[frame_num]
-                    # Convert semantic segmentation image to city scapes color palette
-                    image.convert(carla.ColorConverter.CityScapesPalette)
+                        ############################### ML evaluation ###############################
+                        image = semantic_seg_queue[frame_num]
+                        # Convert semantic segmentation image to city scapes color palette
+                        image.convert(carla.ColorConverter.CityScapesPalette)
 
-                    true_pos_SUT_per_frame, true_neg_SUT_per_frame, false_pos_SUT_per_frame, false_neg_SUT_per_frame = evaluation_module.evaluate(world, display, image, 
-                        detected_objects_per_frame, view_width, view_height, show_ground_truth_bbox_screen, WARNING_AREA)
+                        true_pos_ML_per_frame, false_pos_ML_per_frame, false_neg_ML_per_frame,\
+                         true_pos_ML_imp_region_per_frame, false_pos_ML_imp_region_per_frame, false_neg_ML_imp_region_per_frame =\
+                          evaluation_module.evaluate_ML(world, display, image, detected_objects_per_frame, view_width, view_height,\
+                           show_ground_truth_bbox_screen, WARNING_AREA)
 
-                true_pos_SUT.append(true_pos_SUT_per_frame)
-                true_neg_SUT.append(true_neg_SUT_per_frame)
-                false_pos_SUT.append(false_pos_SUT_per_frame)
-                false_neg_SUT.append(false_neg_SUT_per_frame)
-                ############################### SUT evaluation ###############################
+                        ### true negatives are related to the total number of actors minus the sum of tp+fp+fn (not relevant for now)
+                        # all image
+                        true_pos_ML.append(true_pos_ML_per_frame)
+                        false_pos_ML.append(false_pos_ML_per_frame)
+                        false_neg_ML.append(false_neg_ML_per_frame)
+
+                        # for a specific region of the image
+                        true_pos_ML_region.append(true_pos_ML_imp_region_per_frame)
+                        false_pos_ML_region.append(false_pos_ML_imp_region_per_frame)
+                        false_neg_ML_region.append(false_neg_ML_imp_region_per_frame)
+                        ############################### ML evaluation ###############################  
+
+                        ####### SM evaluation regards the ML performance #######
+                        false_ML_detections = false_pos_ML_per_frame+false_neg_ML_per_frame
+                        true_ML_detections = true_pos_ML_per_frame
+
+                        true_pos_SM_per_frame, true_neg_SM_per_frame, false_pos_SM_per_frame, false_neg_SM_per_frame = \
+                            evaluation_module.evaluate_SM(false_ML_detections, true_ML_detections, threat_detection_per_frame)
+
+                        true_pos_SM.append(true_pos_SM_per_frame)
+                        true_neg_SM.append(true_neg_SM_per_frame)
+                        false_pos_SM.append(false_pos_SM_per_frame)
+                        false_neg_SM.append(false_neg_SM_per_frame)
+                        ####### SM evaluation regards the ML performance #######
+
+                else:
+                    draw_utils.draw_bboxes_safety_area(view_width, view_height, world.camera_manager, display)
 
             pygame.display.flip()
             pygame.event.pump()
@@ -629,23 +594,46 @@ def game_loop(args):
                             json.dump(coco, coco_file, indent=2)
 
                 return
+
     except Exception as e:
-        print('Error during executing the simulation:', e)
+        print('Error during executing the simulation:',e)
+        traceback.print_exc()
+
     finally:
-        print("Final results...")
-        print("true_pos_SUT: {} \ntrue_neg_SUT: {} \nfalse_pos_SUT: {} \nfalse_neg_SUT: {}".format(
-            np.sum(true_pos_SUT), np.sum(true_neg_SUT), np.sum(false_pos_SUT), np.sum(false_neg_SUT)))
-
-        if world is not None:
-            world.destroy()
-
-        # IKS: Kill scenario process
-        try:
-            os.kill(SCENARIO_PROCESS.pid, signal.SIGKILL)
-        except:
-            pass
+        ### saving the results
+        threat,intensity = individual[0]
         
-        pygame.quit()
+        #### ML
+        with open(RESULTS_POS_NEG_ML_EI_PATH.format(threat, str(intensity)), "a") as myfile:
+            myfile.write(RESULTS_POS_NEG_ML_EI_TXT.format(frame_num, np.sum(true_pos_ML), np.sum(false_pos_ML), np.sum(false_neg_ML)))
+
+        with open(RESULTS_POS_NEG_ML_SRI_PATH.format(threat, str(intensity)), "a") as myfile:
+            myfile.write(RESULTS_POS_NEG_ML_SRI_TXT.format(frame_num, np.sum(true_pos_ML_region), np.sum(false_pos_ML_region), np.sum(false_neg_ML_region)))
+
+        #### SM alone
+        arr_SM_pre_detection = np.array(arr_SM_pre_detection)
+        arr_SM_pos_detection = np.array(arr_SM_pos_detection)
+        arr_SM_pre_reaction = np.array(arr_SM_pre_reaction)
+        arr_SM_pos_reaction = np.array(arr_SM_pos_reaction)
+        with open(RESULTS_POS_NEG_SM_PATH.format(threat, str(intensity)), "a") as myfile:
+            myfile.write(RESULTS_POS_NEG_SM_TXT.format(frame_num, arr_SM_pre_detection.sum(),
+             arr_SM_pos_detection.sum(), arr_SM_pre_reaction.sum(), arr_SM_pos_reaction.sum()))
+
+        #### SM regards the ML performance
+        with open(RESULTS_POS_NEG_SM_ML_PATH.format(threat, str(intensity)), "a") as myfile:
+            myfile.write(RESULTS_POS_NEG_SM_ML_TXT.format(frame_num, np.sum(true_pos_SM), np.sum(true_neg_SM),
+             np.sum(false_pos_SM), np.sum(false_neg_SM)))
+
+    if world is not None:
+        world.destroy()
+
+    # IKS: Kill scenario process
+    try:
+        os.kill(SCENARIO_PROCESS.pid, signal.SIGKILL)
+    except:
+        pass
+    
+    pygame.quit()
 
 
 # ==============================================================================
@@ -671,7 +659,7 @@ def main():
         metavar='P',
         default=2000,
         type=int,
-        help='TCP port to listen to (default: 2000)')
+        help='TCP port to listen to (default: 2001)')
     argparser.add_argument(
         '-a', '--autopilot',
         action='store_true',
@@ -747,44 +735,37 @@ def main():
 
     argparser.add_argument('--use_expert_model', #it works just with YOLO for the moment
                            action='store_true',
-                           help='Specify this flag if you want ot use an object detector that was trained in a data corrupted with the same type of threat')
+                           help='Specify this flag if you want to use an object detector that was trained in a data corrupted with the same type of threat')
     
+    argparser.add_argument('--augmented_data_percentage', #it works just with YOLO for the moment
+                           type=str,
+                           default='no',
+                           choices=['no', '1', '10', '25', '50', '100'],
+                           help='if you want to use an object detector trained with data augmentation')
+
     argparser.add_argument('--object_detector_model_type', 
                            type=str,
-                           default='yolo',
-                           choices=['yolo', 'detr'],
+                           default='none',
+                           choices=['none', 'yolo', 'custom_yolo', 'detr'],
                            help='object detector model type')
 
     argparser.add_argument('--no_intervention',
                            action='store_true',
-                           help='Specify this flag if the emergency braking should not be activated')
+                           help='Specify this flag if the safety monitor should not be activated')
 
     argparser.add_argument('--fault_type',
                            type=str,
                            default='none',
-                           choices=['brightness', 'contrast', 'sun_flare', 'rain', 'snow', 'fog', 'smoke', 'pixel_trap', 'row_add_logic', 'shifted_pixel', 'channel_shuffle', 
-                           'channel_dropout', 'coarse_dropout', 'grid_dropout', 'spatter', 'gaussian_noise', 'shot_noise', 'speckle_noise', 'defocus_blur', 'elastic_transform', 
-                           'impulse_noise', 'gaussian_blur', 'pixelate', 'ice', 'broken_lens', 'dirty', 'condensation', 'novelty', 'anomaly', 'heavy_smoke'],
+                           #choices=['default','brightness', 'contrast', 'sun_flare', 'rain', 'snow', 'fog', 'smoke', 'pixel_trap', 'row_add_logic', 'shifted_pixel', 'channel_shuffle', 
+                           #'channel_dropout', 'coarse_dropout', 'grid_dropout', 'spatter', 'gaussian_noise', 'shot_noise', 'speckle_noise', 'defocus_blur', 'elastic_transform', 
+                           #'impulse_noise', 'gaussian_blur', 'pixelate', 'ice', 'broken_lens', 'dirty', 'condensation', 'novelty', 'anomaly', 'heavy_smoke'],
                            help='30 transformations from four types of OOD categories: novelty class, anomalies, distributional shift, and noise.')
 
-    argparser.add_argument('--severity',
+    argparser.add_argument('--execution_mode',
                            type=str,
-                           default='none',
-                           choices=['1', '2', '3', '4', '5'],
-                           help='Severity for a fault type')
+                           default='single',
+                           help='to perform simulation with single or multiple perturbations')
 
-    ###########################################################################################
-    ### fault_type
-    #Distributional shift: 
-    #   In sensor's quality: 'brightness', 'contrast'
-    #   In the environment: 'sun_flare', 'rain', 'snow', 'smoke', 'fog' 
-
-    #Anomaly: 'row_add_logic', 'shifted_pixel', 'channel_shuffle', 'channel_dropout', 'coarse_dropout', 'grid_dropout'
-
-    #Noise: 'spatter', 'gaussian_noise', 'shot_noise', 'speckle_noise', 'defocus_blur',
-    #'elastic_transform', 'impulse_noise', 'gaussian_blur', 'pixelate'
-
-    ###########################################################################################
 
     args = argparser.parse_args()
     #print(args)
@@ -801,17 +782,50 @@ def main():
 
     #print(__doc__)
 
-    try:
-        game_loop(args)
-    except KeyboardInterrupt:
-        print('\nCancelled by user. Bye!')
-    except Exception as error:
-        logging.exception(error)
-    finally:
-        try:
-            os.kill(SCENARIO_PROCESS.pid, signal.SIGKILL)
-        except:
-            pass
+    individual = []
+    if args.fault_type != 'none':
+
+        if args.execution_mode=='multiple':
+            faults = args.fault_type.split('+') # Ex: smoke=3+dropout=1 --> ('smoke', 3), ('coarse_dropout', 1)
+            
+            #if args.fault_type != 'novelty' and args.fault_type != 'anomaly':
+
+            for threat in faults:
+                transformation = threat.split('=')
+
+                if float(transformation[1]) > 0:
+                    tech_lvl = (transformation[0], float(transformation[1]))
+                    individual.append(tech_lvl) #Ex: individual.append(('smoke', 3))
+
+        elif args.execution_mode=='single':
+            #if args.fault_type != 'novelty' and args.fault_type != 'anomaly':
+            transformation = args.fault_type.split('=')
+            if float(transformation[1]) > 0:
+                tech_lvl = (transformation[0], float(transformation[1]))
+                individual.append(tech_lvl)
+    #try:    
+    print('Individual...', individual)
+    t1_start = process_time() 
+
+    process = psutil.Process(os.getpid())
+
+    game_loop(args, individual)
+
+    mem = process.memory_info().rss
+    print('Total memory usage in MB', mem / 1024 ** 2)
+
+    t1_stop = process_time()
+    print("Elapsed time in seconds:", t1_stop-t1_start) 
+
+    # except KeyboardInterrupt:
+    #     print('\nCancelled by user. Bye!')
+    # except Exception as error:
+    #     logging.exception(error)
+    # finally:
+    #     try:
+    #         os.kill(SCENARIO_PROCESS.pid, signal.SIGKILL)
+    #     except:
+    #         pass
 
 
 if __name__ == '__main__':

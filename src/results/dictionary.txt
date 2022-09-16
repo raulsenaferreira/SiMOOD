@@ -1,0 +1,19 @@
+File: ML/entire_image_[perturbation_level].csv
+== OBS: it contains the ML accuracy in the detection regarding the entire image
+== Columns: num of frames; true positive ML; false positive ML; false negative ML
+
+File: ML/specific_region_image_[perturbation_level].csv
+== OBS: it contains the ML accuracy in the detection regarding a SPECIFIC REGION of the image
+== Columns: num of frames; true positive ML; false positive ML; false negative ML
+
+File: SM/[perturbation_level].csv
+== OBS: it contains the SM detection and reaction rates regarding the entire image. We have 4 values because we have two types of monitor: monitor the image (pre) and the output (post) of the ML algorithm.
+== Columns: num of frames; detection pre; detection pos; reaction pre; reaction pos
+
+File: SM_ML/[perturbation_level].csv
+== OBS: it contains the positives and negatives regarding the task of the SM performing the monitoring when the ML is giving an incorrect/correct answer
+== Columns: num of frames; true positive SM; true negative SM; false positive SM; false negative SM
+
+File: hazards/[perturbation_level].csv
+== OBS: it contains information about the simulation parameters that led to a hazard in the scenario
+== Columns: ML MODEL; THREAT; LEVEL; FRAME which occured the hazard
