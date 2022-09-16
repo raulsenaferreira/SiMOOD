@@ -1,0 +1,17 @@
+generations;population_size;omega;predominant_gene(# occurred);hazards
+10;10;0.5;sun_flare=700(7);10
+10;20;0.5;gaussian_noise=0.1(16);11
+10;30;0.5;sun_flare=0(15);12
+10;50;0.5;smoke=0.12(6);12
+20;10;0.5;grid_dropout=3(9);6
+20;20;0.5;gaussian_noise=0.5(16);20
+20;30;0.5;gaussian_noise=0.2(15);23
+20;50;0.5;grid_dropout=1(24);21
+30;10;0.5;gaussian_noise=0.2(9);10
+30;20;0.5;gaussian_noise=0.6(20);20
+30;30;0.5;gaussian_noise=0.7(26);30
+30;50;0.5;gaussian_noise=0.4(32);
+50;10;0.5;gaussian_noise=0.3(8);10
+50;20;0.5;gaussian_noise=0.2(17);20
+50;30;0.5;grid_dropout=1(25);15
+50;50;0.5;grid_dropout=1(48);

@@ -1,0 +1,1352 @@
+=================
+Generations; Population size; Generated individuals
+ 10;10;([[['condensation' '0.49']
+  ['sun_flare' '900']]
+
+ [['broken_lens' '0.52']
+  ['sun_flare' '788']]
+
+ [['coarse_dropout' '19']
+  ['sun_flare' '900']]
+
+ [['broken_lens' '0.52']
+  ['sun_flare' '900']]
+
+ [['coarse_dropout' '19']
+  ['sun_flare' '788']]
+
+ [['channel_dropout' '1']
+  ['sun_flare' '788']]
+
+ [['coarse_dropout' '19']
+  ['sun_flare' '900']]
+
+ [['snow' '2']
+  ['sun_flare' '900']]
+
+ [['coarse_dropout' '19']
+  ['sun_flare' '900']]
+
+ [['snow' '2']
+  ['sun_flare' '900']]]);
+
+=================
+Generations; Population size; Generated individuals
+ 10;20;([[['channel_dropout' '0']
+  ['rain' '2']]
+
+ [['gaussian_blur' '3']
+  ['condensation' '0.6']]
+
+ [['dirty' '0.41']
+  ['grid_dropout' '4']]
+
+ [['coarse_dropout' '13']
+  ['gaussian_noise' '0.1']]
+
+ [['coarse_dropout' '13']
+  ['grid_dropout' '4']]
+
+ [['dirty' '0.41']
+  ['gaussian_noise' '0.1']]
+
+ [['coarse_dropout' '37']
+  ['gaussian_noise' '0.1']]
+
+ [['gaussian_blur' '19']
+  ['gaussian_noise' '0.1']]
+
+ [['gaussian_blur' '19']
+  ['gaussian_noise' '0.1']]
+
+ [['coarse_dropout' '13']
+  ['gaussian_noise' '0.1']]
+
+ [['rain' '4']
+  ['gaussian_noise' '0.1']]
+
+ [['sun_flare' '511']
+  ['gaussian_noise' '0.1']]
+
+ [['rain' '4']
+  ['gaussian_noise' '0.1']]
+
+ [['coarse_dropout' '13']
+  ['gaussian_noise' '0.1']]
+
+ [['smoke' '0.21']
+  ['gaussian_noise' '0.1']]
+
+ [['coarse_dropout' '13']
+  ['gaussian_noise' '0.1']]
+
+ [['rain' '2']
+  ['gaussian_noise' '0.1']]
+
+ [['contrast' '0.26']
+  ['gaussian_noise' '0.1']]
+
+ [['sun_flare' '455']
+  ['gaussian_noise' '0.1']]
+
+ [['rain' '0']
+  ['gaussian_noise' '0.1']]]);
+
+=================
+Generations; Population size; Generated individuals
+ 10;30;([[['dirty' '0.52']
+  ['smoke' '0.03']]
+
+ [['contrast' '0.37']
+  ['grid_dropout' '1']]
+
+ [['sun_flare' '0']
+  ['gaussian_noise' '0.4']]
+
+ [['dirty' '0.0']
+  ['rain' '3']]
+
+ [['sun_flare' '677']
+  ['gaussian_blur' '39']]
+
+ [['smoke' '0.18']
+  ['grid_dropout' '3']]
+
+ [['coarse_dropout' '10']
+  ['channel_dropout' '1']]
+
+ [['broken_lens' '0.63']
+  ['sun_flare' '622']]
+
+ [['smoke' '0.09']
+  ['channel_dropout' '0']]
+
+ [['dirty' '0.69']
+  ['gaussian_blur' '25']]
+
+ [['grid_dropout' '1']
+  ['sun_flare' '677']]
+
+ [['dirty' '0.74']
+  ['smoke' '0.06']]
+
+ [['smoke' '0.18']
+  ['shifted_pixel' '0.0']]
+
+ [['smoke' '0.15']
+  ['gaussian_blur' '37']]
+
+ [['contrast' '0.37']
+  ['gaussian_noise' '0.4']]
+
+ [['sun_flare' '0']
+  ['grid_dropout' '1']]
+
+ [['sun_flare' '0']
+  ['gaussian_noise' '0.4']]
+
+ [['sun_flare' '0']
+  ['grid_dropout' '1']]
+
+ [['sun_flare' '0']
+  ['rain' '5']]
+
+ [['sun_flare' '0']
+  ['grid_dropout' '1']]
+
+ [['sun_flare' '0']
+  ['dirty' '0.69']]
+
+ [['sun_flare' '0']
+  ['snow' '3']]
+
+ [['sun_flare' '0']
+  ['gaussian_blur' '19']]
+
+ [['sun_flare' '0']
+  ['condensation' '0.0']]
+
+ [['sun_flare' '0']
+  ['brightness' '0.63']]
+
+ [['gaussian_blur' '5']
+  ['grid_dropout' '1']]
+
+ [['sun_flare' '0']
+  ['brightness' '0.3']]
+
+ [['sun_flare' '0']
+  ['gaussian_noise' '0.7']]
+
+ [['sun_flare' '0']
+  ['channel_dropout' '1']]
+
+ [['sun_flare' '0']
+  ['smoke' '0.3']]]);
+
+=================
+Generations; Population size; Generated individuals
+ 10;50;([[['smoke' '0.12']
+  ['brightness' '0.52']]
+
+ [['rain' '0']
+  ['contrast' '0.37']]
+
+ [['grid_dropout' '7']
+  ['smoke' '0.21']]
+
+ [['smoke' '0.12']
+  ['brightness' '0.36']]
+
+ [['snow' '4']
+  ['gaussian_blur' '45']]
+
+ [['coarse_dropout' '38']
+  ['gaussian_blur' '23']]
+
+ [['broken_lens' '0.8']
+  ['gaussian_blur' '13']]
+
+ [['rain' '1']
+  ['condensation' '0.1']]
+
+ [['snow' '2']
+  ['rain' '0']]
+
+ [['broken_lens' '0.58']
+  ['grid_dropout' '5']]
+
+ [['rain' '1']
+  ['brightness' '0.3']]
+
+ [['grid_dropout' '4']
+  ['smoke' '0.18']]
+
+ [['condensation' '0.1']
+  ['coarse_dropout' '12']]
+
+ [['smoke' '0.12']
+  ['channel_dropout' '2']]
+
+ [['brightness' '0.41']
+  ['gaussian_blur' '33']]
+
+ [['contrast' '0.48']
+  ['smoke' '0.12']]
+
+ [['grid_dropout' '1']
+  ['broken_lens' '0.0']]
+
+ [['rain' '0']
+  ['brightness' '0.36']]
+
+ [['snow' '4']
+  ['smoke' '0.24']]
+
+ [['gaussian_blur' '15']
+  ['gaussian_noise' '0.6']]
+
+ [['gaussian_noise' '0.4']
+  ['gaussian_blur' '43']]
+
+ [['snow' '0']
+  ['contrast' '0.42']]
+
+ [['dirty' '0.47']
+  ['snow' '3']]
+
+ [['dirty' '0.36']
+  ['coarse_dropout' '20']]
+
+ [['snow' '4']
+  ['condensation' '0.6']]
+
+ [['snow' '2']
+  ['dirty' '0.63']]
+
+ [['smoke' '0.12']
+  ['rain' '1']]
+
+ [['gaussian_noise' '0.7']
+  ['sun_flare' '844']]
+
+ [['grid_dropout' '3']
+  ['gaussian_blur' '37']]
+
+ [['contrast' '0.7']
+  ['smoke' '0.21']]
+
+ [['sun_flare' '844']
+  ['smoke' '0.12']]
+
+ [['channel_dropout' '0']
+  ['smoke' '0.27']]
+
+ [['smoke' '0.0']
+  ['dirty' '0.69']]
+
+ [['brightness' '0.63']
+  ['sun_flare' '566']]
+
+ [['rain' '1']
+  ['brightness' '0.58']]
+
+ [['grid_dropout' '3']
+  ['gaussian_blur' '29']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.6']]
+
+ [['gaussian_blur' '15']
+  ['smoke' '0.27']]
+
+ [['gaussian_blur' '15']
+  ['gaussian_noise' '0.6']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.6']]
+
+ [['channel_dropout' '0']
+  ['smoke' '0.18']]
+
+ [['channel_dropout' '0']
+  ['contrast' '0.64']]
+
+ [['channel_dropout' '0']
+  ['brightness' '0.3']]
+
+ [['channel_dropout' '0']
+  ['shifted_pixel' '0.05']]
+
+ [['channel_dropout' '0']
+  ['dirty' '0.58']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.6']]
+
+ [['channel_dropout' '0']
+  ['dirty' '0.52']]
+
+ [['contrast' '0.2']
+  ['gaussian_noise' '0.6']]
+
+ [['grid_dropout' '3']
+  ['gaussian_noise' '0.6']]
+
+ [['channel_dropout' '0']
+  ['snow' '2']]]);
+
+=================
+Generations; Population size; Generated individuals
+ 20;10;([[['gaussian_blur' '1']
+  ['sun_flare' '844']]
+
+ [['gaussian_blur' '1']
+  ['grid_dropout' '3']]
+
+ [['gaussian_blur' '1']
+  ['grid_dropout' '3']]
+
+ [['condensation' '0.1']
+  ['grid_dropout' '3']]
+
+ [['gaussian_noise' '0.0']
+  ['grid_dropout' '3']]
+
+ [['contrast' '0.0']
+  ['grid_dropout' '3']]
+
+ [['gaussian_blur' '1']
+  ['grid_dropout' '3']]
+
+ [['contrast' '0.0']
+  ['grid_dropout' '3']]
+
+ [['gaussian_noise' '0.3']
+  ['grid_dropout' '3']]
+
+ [['contrast' '0.2']
+  ['grid_dropout' '3']]]);
+
+=================
+Generations; Population size; Generated individuals
+ 20;20;([[['broken_lens' '0.69']
+  ['grid_dropout' '2']]
+
+ [['condensation' '0.32']
+  ['gaussian_noise' '0.6']]
+
+ [['smoke' '0.03']
+  ['gaussian_noise' '0.5']]
+
+ [['brightness' '0.63']
+  ['gaussian_noise' '0.2']]
+
+ [['smoke' '0.03']
+  ['gaussian_noise' '0.5']]
+
+ [['broken_lens' '0.52']
+  ['gaussian_noise' '0.2']]
+
+ [['brightness' '0.0']
+  ['gaussian_noise' '0.5']]
+
+ [['condensation' '0.43']
+  ['gaussian_noise' '0.5']]
+
+ [['smoke' '0.03']
+  ['gaussian_noise' '0.5']]
+
+ [['brightness' '0.0']
+  ['gaussian_noise' '0.5']]
+
+ [['gaussian_blur' '17']
+  ['gaussian_noise' '0.5']]
+
+ [['broken_lens' '0.47']
+  ['gaussian_noise' '0.5']]
+
+ [['contrast' '0.31']
+  ['gaussian_noise' '0.5']]
+
+ [['gaussian_blur' '23']
+  ['gaussian_noise' '0.5']]
+
+ [['dirty' '0.47']
+  ['gaussian_noise' '0.5']]
+
+ [['coarse_dropout' '28']
+  ['gaussian_noise' '0.5']]
+
+ [['smoke' '0.21']
+  ['gaussian_noise' '0.5']]
+
+ [['coarse_dropout' '14']
+  ['gaussian_noise' '0.5']]
+
+ [['grid_dropout' '5']
+  ['gaussian_noise' '0.5']]
+
+ [['brightness' '0.0']
+  ['gaussian_noise' '0.5']]]);
+
+=================
+Generations; Population size; Generated individuals
+ 20;30;([[['brightness' '0.52']
+  ['gaussian_noise' '0.4']]
+
+ [['gaussian_blur' '29']
+  ['gaussian_noise' '0.1']]
+
+ [['channel_dropout' '1']
+  ['gaussian_noise' '0.3']]
+
+ [['gaussian_blur' '11']
+  ['grid_dropout' '4']]
+
+ [['brightness' '0.74']
+  ['grid_dropout' '1']]
+
+ [['condensation' '0.16']
+  ['gaussian_noise' '0.2']]
+
+ [['channel_dropout' '1']
+  ['gaussian_noise' '0.2']]
+
+ [['condensation' '0.16']
+  ['gaussian_noise' '0.3']]
+
+ [['coarse_dropout' '14']
+  ['gaussian_noise' '0.2']]
+
+ [['condensation' '0.16']
+  ['gaussian_noise' '0.3']]
+
+ [['dirty' '0.41']
+  ['gaussian_noise' '0.2']]
+
+ [['broken_lens' '0.47']
+  ['gaussian_noise' '0.2']]
+
+ [['smoke' '0.18']
+  ['gaussian_noise' '0.3']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.2']]
+
+ [['snow' '2']
+  ['gaussian_noise' '0.3']]
+
+ [['contrast' '0.42']
+  ['gaussian_noise' '0.2']]
+
+ [['rain' '1']
+  ['gaussian_noise' '0.2']]
+
+ [['coarse_dropout' '23']
+  ['gaussian_noise' '0.2']]
+
+ [['broken_lens' '0.3']
+  ['gaussian_noise' '0.2']]
+
+ [['snow' '5']
+  ['gaussian_noise' '0.2']]
+
+ [['dirty' '0.47']
+  ['gaussian_noise' '0.2']]
+
+ [['rain' '1']
+  ['gaussian_noise' '0.2']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.2']]
+
+ [['channel_dropout' '0']
+  ['grid_dropout' '1']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.2']]
+
+ [['channel_dropout' '0']
+  ['grid_dropout' '1']]
+
+ [['sun_flare' '455']
+  ['grid_dropout' '1']]
+
+ [['rain' '0']
+  ['grid_dropout' '1']]
+
+ [['dirty' '0.74']
+  ['grid_dropout' '1']]
+
+ [['snow' '0']
+  ['grid_dropout' '1']]]);
+
+=================
+Generations; Population size; Generated individuals
+ 20;50;([[['contrast' '0.48']
+  ['rain' '4']]
+
+ [['snow' '0']
+  ['grid_dropout' '1']]
+
+ [['smoke' '0.03']
+  ['channel_dropout' '1']]
+
+ [['condensation' '0.32']
+  ['sun_flare' '400']]
+
+ [['smoke' '0.0']
+  ['condensation' '0.21']]
+
+ [['contrast' '0.31']
+  ['gaussian_blur' '37']]
+
+ [['smoke' '0.0']
+  ['broken_lens' '0.0']]
+
+ [['brightness' '0.41']
+  ['gaussian_blur' '29']]
+
+ [['dirty' '0.36']
+  ['gaussian_noise' '0.4']]
+
+ [['condensation' '0.21']
+  ['grid_dropout' '6']]
+
+ [['rain' '2']
+  ['grid_dropout' '5']]
+
+ [['gaussian_blur' '13']
+  ['shifted_pixel' '0.05']]
+
+ [['broken_lens' '0.3']
+  ['sun_flare' '900']]
+
+ [['gaussian_noise' '0.1']
+  ['rain' '5']]
+
+ [['snow' '5']
+  ['grid_dropout' '5']]
+
+ [['snow' '0']
+  ['smoke' '0.27']]
+
+ [['rain' '0']
+  ['grid_dropout' '1']]
+
+ [['grid_dropout' '7']
+  ['gaussian_noise' '0.4']]
+
+ [['snow' '0']
+  ['grid_dropout' '1']]
+
+ [['rain' '0']
+  ['grid_dropout' '1']]
+
+ [['coarse_dropout' '25']
+  ['grid_dropout' '1']]
+
+ [['gaussian_noise' '0.3']
+  ['grid_dropout' '1']]
+
+ [['channel_dropout' '2']
+  ['grid_dropout' '1']]
+
+ [['broken_lens' '0.58']
+  ['grid_dropout' '1']]
+
+ [['snow' '5']
+  ['grid_dropout' '1']]
+
+ [['rain' '0']
+  ['grid_dropout' '1']]
+
+ [['brightness' '0.69']
+  ['grid_dropout' '1']]
+
+ [['sun_flare' '511']
+  ['grid_dropout' '1']]
+
+ [['contrast' '0.37']
+  ['grid_dropout' '1']]
+
+ [['smoke' '0.06']
+  ['grid_dropout' '1']]
+
+ [['smoke' '0.09']
+  ['grid_dropout' '1']]
+
+ [['gaussian_blur' '5']
+  ['grid_dropout' '1']]
+
+ [['smoke' '0.0']
+  ['grid_dropout' '1']]
+
+ [['contrast' '0.53']
+  ['grid_dropout' '1']]
+
+ [['rain' '0']
+  ['gaussian_noise' '0.2']]
+
+ [['rain' '0']
+  ['sun_flare' '511']]
+
+ [['rain' '0']
+  ['broken_lens' '0.0']]
+
+ [['rain' '0']
+  ['sun_flare' '400']]
+
+ [['rain' '0']
+  ['coarse_dropout' '40']]
+
+ [['brightness' '0.8']
+  ['grid_dropout' '1']]
+
+ [['broken_lens' '0.41']
+  ['grid_dropout' '1']]
+
+ [['rain' '0']
+  ['smoke' '0.12']]
+
+ [['rain' '0']
+  ['channel_dropout' '1']]
+
+ [['rain' '0']
+  ['grid_dropout' '1']]
+
+ [['rain' '0']
+  ['channel_dropout' '1']]
+
+ [['rain' '0']
+  ['coarse_dropout' '23']]
+
+ [['rain' '0']
+  ['brightness' '0.69']]
+
+ [['coarse_dropout' '28']
+  ['grid_dropout' '1']]
+
+ [['channel_dropout' '1']
+  ['grid_dropout' '1']]
+
+ [['smoke' '0.12']
+  ['grid_dropout' '1']]]);
+
+=================
+Generations; Population size; Generated individuals
+ 30;10;([[['condensation' '0.0']
+  ['gaussian_noise' '0.2']]
+
+ [['smoke' '0.18']
+  ['gaussian_noise' '0.2']]
+
+ [['smoke' '0.18']
+  ['gaussian_noise' '0.2']]
+
+ [['condensation' '0.0']
+  ['gaussian_noise' '0.2']]
+
+ [['contrast' '0.31']
+  ['gaussian_noise' '0.2']]
+
+ [['rain' '0']
+  ['gaussian_noise' '0.2']]
+
+ [['condensation' '0.0']
+  ['grid_dropout' '3']]
+
+ [['rain' '0']
+  ['gaussian_noise' '0.2']]
+
+ [['condensation' '0.0']
+  ['gaussian_noise' '0.2']]
+
+ [['condensation' '0.0']
+  ['gaussian_noise' '0.2']]]);
+
+=================
+Generations; Population size; Generated individuals
+ 30;20;([[['broken_lens' '0.0']
+  ['gaussian_noise' '0.6']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.6']]
+
+ [['broken_lens' '0.0']
+  ['gaussian_noise' '0.6']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.6']]
+
+ [['broken_lens' '0.0']
+  ['gaussian_noise' '0.6']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.6']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.6']]
+
+ [['brightness' '0.0']
+  ['gaussian_noise' '0.6']]
+
+ [['brightness' '0.0']
+  ['gaussian_noise' '0.6']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.6']]
+
+ [['brightness' '0.0']
+  ['gaussian_noise' '0.6']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.6']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.6']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.6']]
+
+ [['brightness' '0.0']
+  ['gaussian_noise' '0.6']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.6']]
+
+ [['brightness' '0.0']
+  ['gaussian_noise' '0.6']]
+
+ [['brightness' '0.0']
+  ['gaussian_noise' '0.6']]
+
+ [['brightness' '0.0']
+  ['gaussian_noise' '0.6']]
+
+ [['grid_dropout' '0']
+  ['gaussian_noise' '0.6']]]);
+
+=================
+Generations; Population size; Generated individuals
+ 30;30;([[['broken_lens' '0.58']
+  ['gaussian_noise' '0.7']]
+
+ [['broken_lens' '0.41']
+  ['gaussian_noise' '0.7']]
+
+ [['broken_lens' '0.41']
+  ['gaussian_noise' '0.7']]
+
+ [['broken_lens' '0.41']
+  ['shifted_pixel' '0.05']]
+
+ [['condensation' '0.43']
+  ['gaussian_noise' '0.7']]
+
+ [['broken_lens' '0.41']
+  ['gaussian_noise' '0.7']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.7']]
+
+ [['gaussian_noise' '0.0']
+  ['gaussian_noise' '0.7']]
+
+ [['snow' '3']
+  ['gaussian_noise' '0.7']]
+
+ [['grid_dropout' '2']
+  ['gaussian_noise' '0.7']]
+
+ [['sun_flare' '677']
+  ['gaussian_noise' '0.7']]
+
+ [['grid_dropout' '6']
+  ['gaussian_noise' '0.7']]
+
+ [['sun_flare' '400']
+  ['gaussian_noise' '0.7']]
+
+ [['sun_flare' '511']
+  ['gaussian_noise' '0.7']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.7']]
+
+ [['gaussian_noise' '0.0']
+  ['sun_flare' '733']]
+
+ [['gaussian_noise' '0.0']
+  ['sun_flare' '677']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.7']]
+
+ [['dirty' '0.36']
+  ['gaussian_noise' '0.7']]
+
+ [['snow' '0']
+  ['gaussian_noise' '0.7']]
+
+ [['condensation' '0.49']
+  ['gaussian_noise' '0.7']]
+
+ [['brightness' '0.41']
+  ['gaussian_noise' '0.7']]
+
+ [['gaussian_blur' '23']
+  ['gaussian_noise' '0.7']]
+
+ [['brightness' '0.0']
+  ['gaussian_noise' '0.7']]
+
+ [['brightness' '0.58']
+  ['gaussian_noise' '0.7']]
+
+ [['gaussian_noise' '0.0']
+  ['sun_flare' '788']]
+
+ [['smoke' '0.21']
+  ['gaussian_noise' '0.7']]
+
+ [['sun_flare' '566']
+  ['gaussian_noise' '0.7']]
+
+ [['sun_flare' '455']
+  ['gaussian_noise' '0.7']]
+
+ [['contrast' '0.53']
+  ['gaussian_noise' '0.7']]]);
+
+=================
+Generations; Population size; Generated individuals
+ 30;50;([[['channel_dropout' '0']
+  ['gaussian_noise' '0.4']]
+
+ [['gaussian_noise' '0.0']
+  ['rain' '5']]
+
+ [['gaussian_noise' '0.1']
+  ['grid_dropout' '3']]
+
+ [['gaussian_blur' '13']
+  ['sun_flare' '566']]
+
+ [['coarse_dropout' '13']
+  ['sun_flare' '677']]
+
+ [['brightness' '0.52']
+  ['gaussian_noise' '0.3']]
+
+ [['gaussian_blur' '3']
+  ['rain' '5']]
+
+ [['coarse_dropout' '28']
+  ['gaussian_noise' '0.2']]
+
+ [['coarse_dropout' '27']
+  ['gaussian_noise' '0.4']]
+
+ [['rain' '0']
+  ['grid_dropout' '3']]
+
+ [['rain' '0']
+  ['gaussian_noise' '0.4']]
+
+ [['channel_dropout' '0']
+  ['grid_dropout' '3']]
+
+ [['snow' '3']
+  ['gaussian_noise' '0.4']]
+
+ [['smoke' '0.15']
+  ['gaussian_noise' '0.4']]
+
+ [['smoke' '0.0']
+  ['gaussian_noise' '0.4']]
+
+ [['rain' '0']
+  ['sun_flare' '900']]
+
+ [['shifted_pixel' '0.05']
+  ['gaussian_noise' '0.4']]
+
+ [['brightness' '0.8']
+  ['gaussian_noise' '0.4']]
+
+ [['channel_dropout' '2']
+  ['gaussian_noise' '0.4']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.4']]
+
+ [['smoke' '0.0']
+  ['gaussian_noise' '0.4']]
+
+ [['rain' '0']
+  ['gaussian_noise' '0.4']]
+
+ [['snow' '0']
+  ['gaussian_noise' '0.4']]
+
+ [['broken_lens' '0.41']
+  ['gaussian_noise' '0.4']]
+
+ [['coarse_dropout' '20']
+  ['gaussian_noise' '0.4']]
+
+ [['rain' '0']
+  ['gaussian_noise' '0.4']]
+
+ [['snow' '0']
+  ['gaussian_noise' '0.4']]
+
+ [['rain' '0']
+  ['gaussian_noise' '0.4']]
+
+ [['rain' '0']
+  ['gaussian_noise' '0.4']]
+
+ [['snow' '0']
+  ['gaussian_noise' '0.4']]
+
+ [['snow' '0']
+  ['sun_flare' '622']]
+
+ [['snow' '0']
+  ['grid_dropout' '3']]
+
+ [['condensation' '0.16']
+  ['gaussian_noise' '0.4']]
+
+ [['channel_dropout' '1']
+  ['gaussian_noise' '0.4']]
+
+ [['dirty' '0.52']
+  ['gaussian_noise' '0.4']]
+
+ [['snow' '0']
+  ['grid_dropout' '6']]
+
+ [['snow' '0']
+  ['sun_flare' '788']]
+
+ [['smoke' '0.12']
+  ['gaussian_noise' '0.4']]
+
+ [['condensation' '0.43']
+  ['gaussian_noise' '0.4']]
+
+ [['contrast' '0.7']
+  ['gaussian_noise' '0.4']]
+
+ [['snow' '0']
+  ['gaussian_noise' '0.4']]
+
+ [['contrast' '0.2']
+  ['gaussian_noise' '0.4']]
+
+ [['brightness' '0.0']
+  ['gaussian_noise' '0.4']]
+
+ [['grid_dropout' '4']
+  ['gaussian_noise' '0.4']]
+
+ [['channel_dropout' '1']
+  ['gaussian_noise' '0.4']]
+
+ [['snow' '0']
+  ['grid_dropout' '3']]
+
+ [['rain' '2']
+  ['gaussian_noise' '0.4']]
+
+ [['snow' '0']
+  ['sun_flare' '788']]
+
+ [['snow' '0']
+  ['sun_flare' '733']]
+
+ [['snow' '0']
+  ['grid_dropout' '2']]]);
+
+=================
+Generations; Population size; Generated individuals
+ 50;10;([[['condensation' '0.0']
+  ['grid_dropout' '3']]
+
+ [['condensation' '0.0']
+  ['grid_dropout' '3']]
+
+ [['condensation' '0.0']
+  ['gaussian_noise' '0.3']]
+
+ [['grid_dropout' '1']
+  ['gaussian_noise' '0.3']]
+
+ [['grid_dropout' '1']
+  ['gaussian_noise' '0.3']]
+
+ [['condensation' '0.0']
+  ['gaussian_noise' '0.3']]
+
+ [['condensation' '0.0']
+  ['gaussian_noise' '0.3']]
+
+ [['condensation' '0.0']
+  ['gaussian_noise' '0.3']]
+
+ [['brightness' '0.0']
+  ['gaussian_noise' '0.3']]
+
+ [['snow' '0']
+  ['gaussian_noise' '0.3']]]);
+
+=================
+Generations; Population size; Generated individuals
+ 50;20;([[['condensation' '0.0']
+  ['grid_dropout' '4']]
+
+ [['condensation' '0.0']
+  ['grid_dropout' '4']]
+
+ [['condensation' '0.0']
+  ['gaussian_noise' '0.2']]
+
+ [['condensation' '0.0']
+  ['grid_dropout' '4']]
+
+ [['condensation' '0.0']
+  ['gaussian_noise' '0.2']]
+
+ [['grid_dropout' '3']
+  ['gaussian_noise' '0.2']]
+
+ [['snow' '2']
+  ['gaussian_noise' '0.2']]
+
+ [['gaussian_blur' '3']
+  ['gaussian_noise' '0.2']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.2']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.2']]
+
+ [['condensation' '0.0']
+  ['gaussian_noise' '0.2']]
+
+ [['condensation' '0.0']
+  ['gaussian_noise' '0.2']]
+
+ [['condensation' '0.0']
+  ['gaussian_noise' '0.2']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.2']]
+
+ [['condensation' '0.0']
+  ['gaussian_noise' '0.2']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.2']]
+
+ [['condensation' '0.0']
+  ['gaussian_noise' '0.2']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.2']]
+
+ [['condensation' '0.0']
+  ['gaussian_noise' '0.2']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.2']]]);
+
+=================
+Generations; Population size; Generated individuals
+ 50;30;([[['rain' '0']
+  ['gaussian_noise' '0.5']]
+
+ [['channel_dropout' '0']
+  ['grid_dropout' '1']]
+
+ [['rain' '0']
+  ['grid_dropout' '1']]
+
+ [['channel_dropout' '0']
+  ['gaussian_noise' '0.5']]
+
+ [['channel_dropout' '0']
+  ['grid_dropout' '1']]
+
+ [['rain' '0']
+  ['grid_dropout' '1']]
+
+ [['rain' '0']
+  ['grid_dropout' '1']]
+
+ [['rain' '0']
+  ['gaussian_noise' '0.4']]
+
+ [['grid_dropout' '2']
+  ['grid_dropout' '1']]
+
+ [['contrast' '0.0']
+  ['grid_dropout' '1']]
+
+ [['brightness' '0.41']
+  ['grid_dropout' '1']]
+
+ [['condensation' '0.21']
+  ['grid_dropout' '1']]
+
+ [['coarse_dropout' '14']
+  ['grid_dropout' '1']]
+
+ [['gaussian_blur' '17']
+  ['grid_dropout' '1']]
+
+ [['rain' '0']
+  ['grid_dropout' '1']]
+
+ [['rain' '2']
+  ['grid_dropout' '1']]
+
+ [['contrast' '0.26']
+  ['grid_dropout' '1']]
+
+ [['rain' '0']
+  ['gaussian_noise' '0.5']]
+
+ [['rain' '0']
+  ['gaussian_noise' '0.2']]
+
+ [['grid_dropout' '2']
+  ['grid_dropout' '1']]
+
+ [['brightness' '0.41']
+  ['grid_dropout' '1']]
+
+ [['gaussian_blur' '23']
+  ['grid_dropout' '1']]
+
+ [['gaussian_blur' '17']
+  ['grid_dropout' '1']]
+
+ [['sun_flare' '400']
+  ['grid_dropout' '1']]
+
+ [['smoke' '0.09']
+  ['grid_dropout' '1']]
+
+ [['dirty' '0.0']
+  ['grid_dropout' '1']]
+
+ [['brightness' '0.3']
+  ['grid_dropout' '1']]
+
+ [['rain' '0']
+  ['grid_dropout' '1']]
+
+ [['sun_flare' '400']
+  ['grid_dropout' '1']]
+
+ [['rain' '0']
+  ['grid_dropout' '1']]]);
+
+=================
+Generations; Population size; Generated individuals
+ 50;50;([[['broken_lens' '0.41']
+  ['grid_dropout' '1']]
+
+ [['dirty' '0.3']
+  ['grid_dropout' '3']]
+
+ [['coarse_dropout' '30']
+  ['grid_dropout' '1']]
+
+ [['coarse_dropout' '30']
+  ['grid_dropout' '1']]
+
+ [['broken_lens' '0.41']
+  ['grid_dropout' '1']]
+
+ [['smoke' '0.09']
+  ['grid_dropout' '1']]
+
+ [['broken_lens' '0.41']
+  ['grid_dropout' '1']]
+
+ [['smoke' '0.09']
+  ['grid_dropout' '1']]
+
+ [['coarse_dropout' '18']
+  ['grid_dropout' '1']]
+
+ [['snow' '2']
+  ['grid_dropout' '1']]
+
+ [['brightness' '0.41']
+  ['grid_dropout' '1']]
+
+ [['gaussian_blur' '23']
+  ['grid_dropout' '1']]
+
+ [['contrast' '0.2']
+  ['grid_dropout' '1']]
+
+ [['smoke' '0.09']
+  ['grid_dropout' '1']]
+
+ [['gaussian_noise' '0.0']
+  ['grid_dropout' '1']]
+
+ [['condensation' '0.49']
+  ['grid_dropout' '1']]
+
+ [['smoke' '0.09']
+  ['grid_dropout' '1']]
+
+ [['gaussian_noise' '0.0']
+  ['grid_dropout' '1']]
+
+ [['sun_flare' '511']
+  ['grid_dropout' '1']]
+
+ [['brightness' '0.63']
+  ['grid_dropout' '1']]
+
+ [['coarse_dropout' '27']
+  ['grid_dropout' '1']]
+
+ [['brightness' '0.63']
+  ['grid_dropout' '1']]
+
+ [['gaussian_noise' '0.0']
+  ['grid_dropout' '1']]
+
+ [['condensation' '0.27']
+  ['grid_dropout' '1']]
+
+ [['rain' '4']
+  ['grid_dropout' '1']]
+
+ [['brightness' '0.36']
+  ['grid_dropout' '1']]
+
+ [['dirty' '0.52']
+  ['grid_dropout' '1']]
+
+ [['gaussian_blur' '13']
+  ['grid_dropout' '1']]
+
+ [['contrast' '0.37']
+  ['grid_dropout' '1']]
+
+ [['shifted_pixel' '0.0']
+  ['grid_dropout' '1']]
+
+ [['gaussian_noise' '0.0']
+  ['grid_dropout' '1']]
+
+ [['shifted_pixel' '0.0']
+  ['grid_dropout' '1']]
+
+ [['snow' '0']
+  ['grid_dropout' '1']]
+
+ [['channel_dropout' '0']
+  ['grid_dropout' '1']]
+
+ [['shifted_pixel' '0.0']
+  ['grid_dropout' '1']]
+
+ [['snow' '0']
+  ['grid_dropout' '1']]
+
+ [['shifted_pixel' '0.0']
+  ['grid_dropout' '1']]
+
+ [['snow' '0']
+  ['grid_dropout' '1']]
+
+ [['smoke' '0.12']
+  ['grid_dropout' '1']]
+
+ [['brightness' '0.36']
+  ['grid_dropout' '1']]
+
+ [['shifted_pixel' '0.0']
+  ['grid_dropout' '1']]
+
+ [['snow' '0']
+  ['grid_dropout' '1']]
+
+ [['rain' '1']
+  ['grid_dropout' '1']]
+
+ [['channel_dropout' '1']
+  ['grid_dropout' '1']]
+
+ [['shifted_pixel' '0.0']
+  ['grid_dropout' '1']]
+
+ [['snow' '0']
+  ['grid_dropout' '1']]
+
+ [['rain' '3']
+  ['grid_dropout' '1']]
+
+ [['snow' '0']
+  ['sun_flare' '900']]
+
+ [['coarse_dropout' '31']
+  ['grid_dropout' '1']]
+
+ [['coarse_dropout' '21']
+  ['grid_dropout' '1']]]);
+
