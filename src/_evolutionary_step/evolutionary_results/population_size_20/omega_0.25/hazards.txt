@@ -1,4 +1,0 @@
-num_generation;hazards
-5;1
-10;2
-20;2
