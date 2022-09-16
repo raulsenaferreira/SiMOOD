@@ -1,22 +1,12 @@
+## QUICK Setup
 
-In this repository there are scripts to execute and record reproducible and configurable scenarios with [CARLA](https://github.com/carla-simulator/carla) using [ScenarioRunner](https://github.com/carla-simulator/scenario_runner/).
-
-
-
-# Serving a YOLOV4 Model Via IPC
-
-Makes a model available to, e.g., CARLA, by serving it via an IPC endpoint.
-
-## Installation
-
-1. Create a new virtual environment and install dependencies with `pip install -r requirements`
-
-PYTHONPATH=PYTHONPATH:/opt/carla-simulator/PythonAPI/carla/ ../collab_laas/v_env/bin/python src/scenario_executor.py -h
-
-
-## Usage
-
-1. See `carla-scenario-generation/example_scenarios/object_detector_integration_demo.sh` and `carla-scenario-generation/scenario_executor.py` for the usage
+1. Install CARLA. The scenario generator has been tested with version 0.9.11
+2. Clone this repository into the PythonAPI directory of your CARLA installation
+3. Create a new virtual environment and install dependencies with `pip install -r requirements`. It has been tested with Python 3.7 and 3.8
+4. Install CARLA's python package via the provided .egg file `easy_install ../carla/dist/carla-0.9.11-py3.7-linux-x86_64.egg`. If you use another Python version maybe you have to build the package yourself from CARLA's sources
+5. Execute this line to correctly set your python path and test if you can execute the scenario_executor script (if it show some options on your terminal it means that is OK): 
+PYTHONPATH=PYTHONPATH:/opt/carla-simulator/PythonAPI/carla/ ../collab_laas/VENV/bin/python src/scenario_executor.py -h
+6. execute the main file using the OOD perturbations and levels that were outputted from the evolutionary step [to execute the evolutionary step, please go to the folder src/evolutionary_step].
 
 
 ## Usage
@@ -61,12 +51,3 @@ Note that UE4 itself follows its own license terms.
 
 
 
-## Setup
-
-1. Install CARLA. The scenario generator has been tested with version 0.9.11
-2. Clone this repository into the PythonAPI directory of your CARLA installation
-3. Create a new virtual environment and install dependencies with `pip install -r requirements`. It has been tested with Python 3.7 and 3.8
-4. Install CARLA's python package via the provided .egg file `easy_install ../carla/dist/carla-0.9.11-py3.7-linux-x86_64.egg`. If you use another Python version maybe you have to build the package yourself from CARLA's sources
-5. Execute this line to correctly set your python path and test if you can execute the scenario_executor script (if it show some options on your terminal it means that is OK): 
-PYTHONPATH=PYTHONPATH:/opt/carla-simulator/PythonAPI/carla/ ../collab_laas/VENV/bin/python src/scenario_executor.py -h
-6. execute ./run_experiments.sh for starting the experiments (you can edit this file if you want to change paths for your application)
