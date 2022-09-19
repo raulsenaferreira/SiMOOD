@@ -1,4 +1,6 @@
-## QUICK Setup
+## This repository is divided in two parts: A) Setup for OOD perturbations live in CARLA, and B) evolutionary search for OOD perturbations 
+
+## A) QUICK Setup for CARLA simulator and simulations
 
 1. Install CARLA. The scenario generator has been tested with version 0.9.11
 2. Clone this repository into the PythonAPI directory of your CARLA installation
@@ -12,7 +14,11 @@ Example of command line that runs the carla simulator with smoke level 0.5 with 
 
 python3.8 src/main.py --output-dir src/scenario_test --scenario-path src/pedestrian_crossing_between_cars0/scenario.xosc --time-of-day day --fault_type smoke=0.5 --object_detector_model_type yolo  --no-recording --execution_mode single
 
-
+## B) QUICK setup for running evolutionary search for OOD perturbations
+1. go until the folder evolutionary_step
+2. create your virtual environment (example python -m venv v_env) and activate it
+3. pip install -r requirements.txt
+4. execute the file main.py (you can modify the different parts in this file to run the GA algorithm with the params as you prefer)
 
 ## Usage
 
