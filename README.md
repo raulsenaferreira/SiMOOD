@@ -8,6 +8,11 @@
 PYTHONPATH=PYTHONPATH:/opt/carla-simulator/PythonAPI/carla/ ../collab_laas/VENV/bin/python src/scenario_executor.py -h
 6. execute the main file using the OOD perturbations and levels that were outputted from the evolutionary step [to execute the evolutionary step, please go to the folder src/evolutionary_step].
 
+Example of command line that runs the carla simulator with smoke level 0.5 with yolo as object detector:
+
+python3.8 src/main.py --output-dir src/scenario_test --scenario-path src/pedestrian_crossing_between_cars0/scenario.xosc --time-of-day day --fault_type smoke=0.5 --object_detector_model_type yolo  --no-recording --execution_mode single
+
+
 
 ## Usage
 
