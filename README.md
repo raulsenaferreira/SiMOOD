@@ -22,7 +22,7 @@ python3.8 src/main.py --output-dir src/scenario_test --scenario-path src/pedestr
 
 ## Usage
 
-1. Start the CARLA server with `./CarlaUE4.sh`. It is best to keep the default options and use the Vulkan backend, as the OpenGL backend has some problems, e.g., with rendering fog properly
+1. Start the CARLA server with `./CarlaUE4.sh -opengl -quality-level=Epic`. You can change from -opengl to the -Vulkan backend if you want to.
 2. Navigate to the subdirectory in PythonAPI where you have placed the contents of this repository
 3. Generate a specific scenario by running `PYTHONPATH=PYTHONPATH:../carla ../venv/bin/python scenario_executor.py --output-dir scenario1 --scenario-path example_scenarios/crash_ahead.xosc`. This will open another window rendering the scenarios output and afterwards will store all recorded data in the specified output directory
     - The scenario is configured via a cli. To get all configurable parameters run `PYTHONPATH=PYTHONPATH:../carla ../venv/bin/python scenario_executor.py -h`. For instance, to generate a scenario at sunset with heavy rain and overcast sky run `PYTHONPATH=PYTHONPATH:../carla ../venv/bin/python scenario_executor.py --output-dir scenario1 --scenario-path example_scenarios/group_of_cyclists.xosc --time-of-day sunset --rain heavy --clouds heavy`
