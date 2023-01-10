@@ -1,6 +1,10 @@
-## This repository is divided into two parts: A) Setup for OOD perturbations live in CARLA, and B) evolutionary search for OOD perturbations 
+## SiMOOD: Evolutionary Testing Simulation with Out-Of-Distribution Images
 
-## A) QUICK Setup for CARLA simulator and simulations
+This repository is divided into two parts: A) Setup for OOD perturbations live in CARLA, and B) evolutionary search for OOD perturbations.
+Details about how the concept, architecture and experiments can be seen in our paper ([click here to access it](https://hal.science/hal-03779723/)) accepted and presented at the 27th IEEE Pacific Rim International Symposium on Dependable Computing (PRDC 2022).
+ 
+
+#### A) QUICK Setup for CARLA simulator and simulations
 
 1. Install CARLA. The scenario generator has been tested with version 0.9.11
 2. Clone this repository into the PythonAPI directory of your CARLA installation
@@ -14,13 +18,13 @@ Example of a command line that runs the CARLA simulator with smoke level 0.5 wit
 
 python3.8 src/main.py --output-dir src/scenario_test --scenario-path src/pedestrian_crossing_between_cars0/scenario.xosc --time-of-day day --fault_type smoke=0.5 --object_detector_model_type yolo  --no-recording --execution_mode single
 
-## B) QUICK setup for running the evolutionary search for OOD perturbations
+#### B) QUICK setup for running the evolutionary search for OOD perturbations
 1. go to the folder evolutionary_step
 2. create your virtual environment (for example python -m venv v_env) and activate it
 3. pip install -r requirements.txt
 4. execute the file main.py (you can modify the different parts in this file to run the GA algorithm with the params as you prefer)
 
-## Usage
+### Usage
 
 1. Start the CARLA server with `./CarlaUE4.sh -opengl -quality-level=Epic`. You can change from -opengl to the -Vulkan backend if you want to.
 2. Navigate to the subdirectory in PythonAPI where you have placed the contents of this repository
@@ -32,19 +36,19 @@ python3.8 src/main.py --output-dir src/scenario_test --scenario-path src/pedestr
 4. See the scripts under example_scenarios/ for generating data for a batch of different scenario configurations and for integrating an object detector (the latter is experimental)
 
 
-## Troubleshooting
+#### Troubleshooting
 
 - It is recommended to restart the CARLA server after each run to avoid any problems
 
 
-## Modification
+### Possible customizations
 
 1. To create additional scenario templates refer to [CARLA ScenarioRunner](https://github.com/carla-simulator/scenario_runner/)
 2. Custom ego vehicle behavior can be defined by extending/overriding CustomAgent or Basic Agent in, e.g., `custom_agent.py`
 3. To modify the data recording and environment setup (e.g. weather) look into `scenario_generation_and_recording.py`
 
 
-## License
+### License
 
 ScenarioRunner-specific code is distributed under MIT License.
 
