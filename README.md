@@ -1,5 +1,7 @@
 ## SiMOOD: Evolutionary Testing Simulation with Out-Of-Distribution Images
 
+Important notice: this is an experimental image transformation tool for CARLA simulator. It was developed in an academic context. Therefore, several code improvements and cleaning are needed to be considered a mature tool. Feel free to contribute and open new issues.
+
 This repository is divided into two parts: A) Setup for OOD perturbations live in CARLA B) Evolutionary search for OOD perturbations.
 
 Details about the concept, architecture and experiments can be [seen in our paper](https://hal.science/hal-03779723/) presented at the 27th IEEE Pacific Rim International Symposium on Dependable Computing (PRDC 2022).
